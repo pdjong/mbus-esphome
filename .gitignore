@@ -31,5 +31,6 @@
 *.out
 *.app
 
-# LT Spice raw binary files
+# LT Spice raw binary and log files
 spice_model/**/*.raw
+spice_model/**/*.log
