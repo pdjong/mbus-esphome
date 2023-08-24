@@ -3,7 +3,7 @@
 #include <driver/ledc.h>
 
 namespace esphome {
-namespace warmtemetermbus {
+namespace heatmeter_mbus {
 
 class Pwm {
 public:  
@@ -23,5 +23,5 @@ private:
   ledc_channel_config_t channelConfig;
 };
 
-} //namespace warmtemetermbus
+} //namespace heatmeter_mbus
 } //namespace esphome

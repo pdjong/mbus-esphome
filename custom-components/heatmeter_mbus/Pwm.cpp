@@ -6,7 +6,7 @@ using namespace std;
 
 namespace esphome
 {
-  namespace warmtemetermbus
+  namespace heatmeter_mbus
   {
     esp_err_t Pwm::initialize(uint8_t gpioPin, uint32_t frequency, float dutyCycle)
     {
@@ -61,5 +61,5 @@ namespace esphome
       }
       return ledc_update_duty(channelConfig.speed_mode, channelConfig.channel);
     }
-  } // namespace warmtemetermbus
+  } // namespace heatmeter_mbus
 } // namespace esphome

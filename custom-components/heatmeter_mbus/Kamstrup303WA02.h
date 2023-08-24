@@ -4,7 +4,7 @@
 #include "esphome/components/uart/uart.h"
 
 namespace esphome {
-namespace warmtemetermbus {
+namespace heatmeter_mbus {
  
 class Kamstrup303WA02 {
 public:
@@ -199,5 +199,5 @@ private:
   void copyDataToTargetBuffer(VariableDataRecord* dataRecord, void* targetBuffer);
 };
 
-} //namespace warmtemetermbus
+} //namespace heatmeter_mbus
 } //namespace esphome

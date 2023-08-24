@@ -1,7 +1,7 @@
 #include "Kamstrup303WA02.h"
 
 namespace esphome {
-namespace warmtemetermbus {
+namespace heatmeter_mbus {
 
 static const char * TAG {"Kamstrup303WA02"};
 
@@ -571,5 +571,5 @@ uint8_t Kamstrup303WA02::DataLinkLayer::calculateChecksum(const uint8_t data[], 
   return checksum;
 }
 
-} //namespace warmtemetermbus
+} //namespace heatmeter_mbus
 } //namespace esphome
