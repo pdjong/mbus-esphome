@@ -2,7 +2,7 @@
 
 #include "esphome/core/component.h"
 #include "esphome/components/sensor/sensor.h"
-#include "esphome/components/binary_sensor/binary_sensor.h"
+// #include "esphome/components/binary_sensor/binary_sensor.h"
 #include "esphome/components/uart/uart.h"
 // #include "Kamstrup303WA02.h"
 // #include "Pwm.h"
@@ -12,11 +12,11 @@ namespace heatmeter_mbus {
 
 class MbusSensor : public sensor::Sensor {
   public:
-    MbusSensor(uint8_t index) : _index(index) {}
+    MbusSensor(uint8_t index) : index_(index) {}
 
   private:
-    uint8_t index;
-}
+    uint8_t index_;
+};
 
 #define HEATMETERMBUS_METER_SENSOR(name) \
  protected: \
@@ -34,7 +34,7 @@ class MbusSensor : public sensor::Sensor {
 
 class HeatMeterMbus : public Component, public uart::UARTDevice {
   public:  
-    HeatMeterMbus() : kamstrup(this) {}
+    HeatMeterMbus() /*: kamstrup(this) */ {}
     
     // HEATMETERMBUS_METER_SENSOR(t1_actual)
     void setup() override;
