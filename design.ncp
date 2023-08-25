@@ -7,7 +7,7 @@
       <Entity type="Class">
         <Name>UARTDevice</Name>
         <Access>Public</Access>
-        <Location left="322" top="190" />
+        <Location left="1116" top="235" />
         <Size width="162" height="128" />
         <Collapsed>False</Collapsed>
         <Member type="Method">public void write_array()</Member>
@@ -18,7 +18,7 @@
       <Entity type="Class">
         <Name>UARTComponent</Name>
         <Access>Public</Access>
-        <Location left="708" top="190" />
+        <Location left="1436" top="235" />
         <Size width="162" height="128" />
         <Collapsed>False</Collapsed>
         <Member type="Method">public void write_array()</Member>
@@ -29,7 +29,7 @@
       <Entity type="Class">
         <Name>IDFUARTComponent</Name>
         <Access>Public</Access>
-        <Location left="602" top="448" />
+        <Location left="1330" top="493" />
         <Size width="162" height="216" />
         <Collapsed>True</Collapsed>
         <Modifier>None</Modifier>
@@ -37,7 +37,7 @@
       <Entity type="Class">
         <Name>ESP32ArduinoUARTComponent</Name>
         <Access>Public</Access>
-        <Location left="793" top="448" />
+        <Location left="1521" top="493" />
         <Size width="215" height="216" />
         <Collapsed>True</Collapsed>
         <Modifier>None</Modifier>
@@ -45,29 +45,57 @@
       <Entity type="Class">
         <Name>HeatMeterMbus</Name>
         <Access>Public</Access>
-        <Location left="188" top="489" />
+        <Location left="982" top="534" />
         <Size width="162" height="77" />
         <Collapsed>False</Collapsed>
         <Modifier>None</Modifier>
       </Entity>
       <Entity type="Class">
-        <Name>PollingComponent</Name>
+        <Name>Component</Name>
         <Access>Public</Access>
-        <Location left="77" top="190" />
+        <Location left="872" top="235" />
         <Size width="162" height="111" />
         <Collapsed>False</Collapsed>
         <Member type="Method">public void setup()</Member>
-        <Member type="Method">public void update()</Member>
+        <Member type="Method">public void loop()</Member>
         <Modifier>None</Modifier>
       </Entity>
       <Entity type="Class">
         <Name>Kamstrup303WA02</Name>
         <Access>Public</Access>
-        <Location left="188" top="691" />
+        <Location left="982" top="736" />
         <Size width="162" height="94" />
         <Collapsed>False</Collapsed>
         <Member type="Method">public void sndNke()</Member>
         <Modifier>None</Modifier>
+      </Entity>
+      <Entity type="Class">
+        <Name>MbusSensor</Name>
+        <Access>Public</Access>
+        <Location left="628" top="534" />
+        <Size width="162" height="77" />
+        <Collapsed>False</Collapsed>
+        <Modifier>None</Modifier>
+      </Entity>
+      <Entity type="Class">
+        <Name>Sensor</Name>
+        <Access>Public</Access>
+        <Location left="628" top="235" />
+        <Size width="162" height="77" />
+        <Collapsed>False</Collapsed>
+        <Modifier>None</Modifier>
+      </Entity>
+      <Entity type="Comment">
+        <Text>HeatMeterMbus.readMbus() is called by an external interval.
+
+readMbus() uses Kamstrup303WA02 to read everything, and puts each value in an object.
+
+After reading everything, HeatMeterMbus goes over all its sensors and uses the sensor's index to map it on a read value. Then it tells the MbusSensor the value, and to publish it.
+
+For now the MbusSensor can transfer the value 1:1.
+Later, the read value object has a unit and value, and the MbusSensor can have a (configured) unit, and convert the value to the required unit.</Text>
+        <Location left="1299" top="778" />
+        <Size width="353" height="206" />
       </Entity>
     </Entities>
     <Relationships>
@@ -76,12 +104,12 @@
         <StartOrientation>Horizontal</StartOrientation>
         <EndOrientation>Horizontal</EndOrientation>
         <BendPoint relativeToStartShape="True">
-          <X>548</X>
-          <Y>259</Y>
+          <X>1342</X>
+          <Y>304</Y>
         </BendPoint>
         <BendPoint relativeToStartShape="False">
-          <X>665</X>
-          <Y>259</Y>
+          <X>1393</X>
+          <Y>304</Y>
         </BendPoint>
         <Direction>Unidirectional</Direction>
         <AssociationType>Association</AssociationType>
@@ -104,8 +132,8 @@
         <StartOrientation>Vertical</StartOrientation>
         <EndOrientation>Vertical</EndOrientation>
         <BendPoint relativeToStartShape="True">
-          <X>270</X>
-          <Y>447</Y>
+          <X>1064</X>
+          <Y>492</Y>
         </BendPoint>
         <Direction>Unidirectional</Direction>
         <AssociationType>Association</AssociationType>
@@ -116,8 +144,8 @@
         <StartOrientation>Vertical</StartOrientation>
         <EndOrientation>Vertical</EndOrientation>
         <BendPoint relativeToStartShape="True">
-          <X>220</X>
-          <Y>595</Y>
+          <X>1014</X>
+          <Y>640</Y>
         </BendPoint>
         <Direction>Unidirectional</Direction>
         <AssociationType>Composition</AssociationType>
@@ -128,11 +156,21 @@
         <StartOrientation>Vertical</StartOrientation>
         <EndOrientation>Vertical</EndOrientation>
         <BendPoint relativeToStartShape="False">
-          <X>310</X>
-          <Y>593</Y>
+          <X>1104</X>
+          <Y>638</Y>
         </BendPoint>
         <Direction>Unidirectional</Direction>
         <AssociationType>Association</AssociationType>
+      </Relationship>
+      <Relationship type="Generalization" first="7" second="8">
+        <StartOrientation>Vertical</StartOrientation>
+        <EndOrientation>Vertical</EndOrientation>
+      </Relationship>
+      <Relationship type="Association" first="4" second="7">
+        <StartOrientation>Horizontal</StartOrientation>
+        <EndOrientation>Horizontal</EndOrientation>
+        <Direction>Unidirectional</Direction>
+        <AssociationType>Aggregation</AssociationType>
       </Relationship>
     </Relationships>
   </ProjectItem>
