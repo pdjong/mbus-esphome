@@ -46,8 +46,9 @@
         <Name>HeatMeterMbus</Name>
         <Access>Public</Access>
         <Location left="982" top="534" />
-        <Size width="162" height="77" />
+        <Size width="162" height="94" />
         <Collapsed>False</Collapsed>
+        <Member type="Method">public void readMbus()</Member>
         <Modifier>None</Modifier>
       </Entity>
       <Entity type="Class">
@@ -63,26 +64,29 @@
       <Entity type="Class">
         <Name>Kamstrup303WA02</Name>
         <Access>Public</Access>
-        <Location left="982" top="736" />
-        <Size width="162" height="94" />
+        <Location left="959" top="714" />
+        <Size width="192" height="111" />
         <Collapsed>False</Collapsed>
         <Member type="Method">public void sndNke()</Member>
+        <Member type="Method">public bool readData(MeterData data)</Member>
         <Modifier>None</Modifier>
       </Entity>
       <Entity type="Class">
         <Name>MbusSensor</Name>
         <Access>Public</Access>
         <Location left="628" top="534" />
-        <Size width="162" height="77" />
+        <Size width="162" height="94" />
         <Collapsed>False</Collapsed>
+        <Member type="Property">public int index { get; set; }</Member>
         <Modifier>None</Modifier>
       </Entity>
       <Entity type="Class">
         <Name>Sensor</Name>
         <Access>Public</Access>
         <Location left="628" top="235" />
-        <Size width="162" height="77" />
+        <Size width="162" height="94" />
         <Collapsed>False</Collapsed>
+        <Member type="Method">public void publish_state()</Member>
         <Modifier>None</Modifier>
       </Entity>
       <Entity type="Comment">
@@ -94,8 +98,16 @@ After reading everything, HeatMeterMbus goes over all its sensors and uses the s
 
 For now the MbusSensor can transfer the value 1:1.
 Later, the read value object has a unit and value, and the MbusSensor can have a (configured) unit, and convert the value to the required unit.</Text>
-        <Location left="1299" top="778" />
+        <Location left="457" top="714" />
         <Size width="353" height="206" />
+      </Entity>
+      <Entity type="Class">
+        <Name>DataBlock</Name>
+        <Access>Public</Access>
+        <Location left="1325" top="773" />
+        <Size width="162" height="216" />
+        <Collapsed>False</Collapsed>
+        <Modifier>None</Modifier>
       </Entity>
     </Entities>
     <Relationships>
@@ -127,8 +139,6 @@ Later, the read value object has a unit and value, and the MbusSensor can have a
         <EndOrientation>Vertical</EndOrientation>
       </Relationship>
       <Relationship type="Association" first="4" second="0">
-        <Label>
-        </Label>
         <StartOrientation>Vertical</StartOrientation>
         <EndOrientation>Vertical</EndOrientation>
         <BendPoint relativeToStartShape="True">
@@ -139,25 +149,22 @@ Later, the read value object has a unit and value, and the MbusSensor can have a
         <AssociationType>Association</AssociationType>
       </Relationship>
       <Relationship type="Association" first="4" second="6">
-        <Label>
-        </Label>
         <StartOrientation>Vertical</StartOrientation>
         <EndOrientation>Vertical</EndOrientation>
         <BendPoint relativeToStartShape="True">
           <X>1014</X>
-          <Y>640</Y>
+          <Y>657</Y>
         </BendPoint>
         <Direction>Unidirectional</Direction>
         <AssociationType>Composition</AssociationType>
       </Relationship>
       <Relationship type="Association" first="6" second="4">
-        <Label>
-        </Label>
+        <Label>uartDevice</Label>
         <StartOrientation>Vertical</StartOrientation>
         <EndOrientation>Vertical</EndOrientation>
         <BendPoint relativeToStartShape="False">
           <X>1104</X>
-          <Y>638</Y>
+          <Y>655</Y>
         </BendPoint>
         <Direction>Unidirectional</Direction>
         <AssociationType>Association</AssociationType>
@@ -167,10 +174,131 @@ Later, the read value object has a unit and value, and the MbusSensor can have a
         <EndOrientation>Vertical</EndOrientation>
       </Relationship>
       <Relationship type="Association" first="4" second="7">
+        <Label>
+        </Label>
         <StartOrientation>Horizontal</StartOrientation>
         <EndOrientation>Horizontal</EndOrientation>
         <Direction>Unidirectional</Direction>
         <AssociationType>Aggregation</AssociationType>
+      </Relationship>
+    </Relationships>
+  </ProjectItem>
+  <ProjectItem type="NClass.DiagramEditor.ClassDiagram.Diagram" assembly="NClass.DiagramEditor, Version=2.4.1823.0, Culture=neutral, PublicKeyToken=null">
+    <Name>Data</Name>
+    <Language>CSharp</Language>
+    <Entities>
+      <Entity type="Class">
+        <Name>DataBlock</Name>
+        <Access>Public</Access>
+        <Location left="243" top="364" />
+        <Size width="162" height="77" />
+        <Collapsed>False</Collapsed>
+        <Modifier>None</Modifier>
+      </Entity>
+      <Entity type="Class">
+        <Name>DataRecordHeader</Name>
+        <Access>Public</Access>
+        <Location left="561" top="297" />
+        <Size width="162" height="77" />
+        <Collapsed>False</Collapsed>
+        <Modifier>None</Modifier>
+      </Entity>
+      <Entity type="Class">
+        <Name>Data</Name>
+        <Access>Public</Access>
+        <Location left="561" top="441" />
+        <Size width="162" height="77" />
+        <Collapsed>False</Collapsed>
+        <Modifier>None</Modifier>
+      </Entity>
+      <Entity type="Class">
+        <Name>DataInformationBlock</Name>
+        <Access>Public</Access>
+        <Location left="855" top="189" />
+        <Size width="190" height="145" />
+        <Collapsed>False</Collapsed>
+        <Member type="Property">public int Data { get; set; }</Member>
+        <Member type="Property">public int Function { get; set; }</Member>
+        <Member type="Property">public int StorageNumber { get; set; }</Member>
+        <Member type="Property">public int Tariff { get; set; }</Member>
+        <Modifier>None</Modifier>
+      </Entity>
+      <Entity type="Class">
+        <Name>ValueInformationBlock</Name>
+        <Access>Public</Access>
+        <Location left="855" top="378" />
+        <Size width="162" height="128" />
+        <Collapsed>False</Collapsed>
+        <Member type="Property">public int Unit { get; set; }</Member>
+        <Member type="Property">public int TenPower { get; set; }</Member>
+        <Member type="Property">public int Quantity { get; set; }</Member>
+        <Modifier>None</Modifier>
+      </Entity>
+      <Entity type="Comment">
+        <Text>Top: Representation of the binary data in the user data part of the telegram.</Text>
+        <Location left="1234" top="331" />
+        <Size width="160" height="75" />
+      </Entity>
+      <Entity type="Class">
+        <Name>DataBlock</Name>
+        <Access>Public</Access>
+        <Location left="451" top="766" />
+        <Size width="190" height="162" />
+        <Collapsed>False</Collapsed>
+        <Member type="Property">public int Function { get; set; }</Member>
+        <Member type="Property">public int StorageNumber { get; set; }</Member>
+        <Member type="Property">public int Tariff { get; set; }</Member>
+        <Member type="Property">public uint64_t Data { get; set; }</Member>
+        <Member type="Property">public int Index { get; set; }</Member>
+        <Modifier>None</Modifier>
+      </Entity>
+    </Entities>
+    <Relationships>
+      <Relationship type="Association" first="0" second="1">
+        <StartOrientation>Horizontal</StartOrientation>
+        <EndOrientation>Horizontal</EndOrientation>
+        <BendPoint relativeToStartShape="True">
+          <X>435</X>
+          <Y>377</Y>
+        </BendPoint>
+        <Direction>Unidirectional</Direction>
+        <AssociationType>Composition</AssociationType>
+        <EndMultiplicity>1</EndMultiplicity>
+      </Relationship>
+      <Relationship type="Association" first="0" second="2">
+        <StartOrientation>Horizontal</StartOrientation>
+        <EndOrientation>Horizontal</EndOrientation>
+        <BendPoint relativeToStartShape="True">
+          <X>431</X>
+          <Y>425</Y>
+        </BendPoint>
+        <Direction>Unidirectional</Direction>
+        <AssociationType>Composition</AssociationType>
+        <EndMultiplicity>1</EndMultiplicity>
+      </Relationship>
+      <Relationship type="Association" first="1" second="3">
+        <StartOrientation>Horizontal</StartOrientation>
+        <EndOrientation>Horizontal</EndOrientation>
+        <BendPoint relativeToStartShape="True">
+          <X>754</X>
+          <Y>312</Y>
+        </BendPoint>
+        <BendPoint relativeToStartShape="False">
+          <X>830</X>
+          <Y>269</Y>
+        </BendPoint>
+        <Direction>Unidirectional</Direction>
+        <AssociationType>Composition</AssociationType>
+      </Relationship>
+      <Relationship type="Association" first="1" second="4">
+        <StartOrientation>Horizontal</StartOrientation>
+        <EndOrientation>Horizontal</EndOrientation>
+        <BendPoint relativeToStartShape="True">
+          <X>756</X>
+          <Y>361</Y>
+        </BendPoint>
+        <Direction>Unidirectional</Direction>
+        <AssociationType>Composition</AssociationType>
       </Relationship>
     </Relationships>
   </ProjectItem>
