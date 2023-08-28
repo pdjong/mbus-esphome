@@ -6,6 +6,13 @@ namespace heatmeter_mbus {
 
 static const char * TAG {"Kamstrup303WA02"};
 
+// Slave must wait at least 11 bit times, and at max 330 bit times + 50ms before answering.
+// In case no answer within that time, retry at most twice.
+// (see 5.4 Communication Process)
+bool Kamstrup303WA02::DataLinkLayer::try_send_short_frame(const uint8_t c, const uint8_t a) {
+  return false;
+}
+
 uint8_t Kamstrup303WA02::DataLinkLayer::calculate_checksum(const uint8_t* data, size_t length) const {
   uint8_t checksum { 0 };
   for (size_t i = 0; i < length; ++i) {

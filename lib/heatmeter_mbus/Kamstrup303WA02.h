@@ -25,7 +25,8 @@ class Kamstrup303WA02 {
         DataLinkLayer(UartInterface* uart_interface) : uart_interface_(uart_interface) {}
 
       protected:
-      uint8_t calculate_checksum(const uint8_t* data, size_t length) const;
+        uint8_t calculate_checksum(const uint8_t* data, size_t length) const;
+        bool try_send_short_frame(const uint8_t c, const uint8_t a);
 
         UartInterface* uart_interface_;  
     };
