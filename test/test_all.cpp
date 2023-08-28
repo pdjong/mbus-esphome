@@ -1,5 +1,7 @@
 #include <Arduino.h>
+#include <test_includes.h>
 #include <bollocks.h>
+#include <TestableDataLinkLayer.h>
 #include <unity.h>
 
 void setUp(void) {}
@@ -19,9 +21,18 @@ void test_bollocks_do_something_with_two_numbers(void) {
   TEST_ASSERT_EQUAL(6, bollocks.do_something_with_two_numbers(2, 2));
 }
 
+void test_data_link_layer_calculate_checksum(void) {
+  FakeUartInterface fakeUartInterface;
+  TestableDataLinkLayer dataLinkLayer(&fakeUartInterface);
+
+  uint8_t data[] { 0, 0 };
+  TEST_ASSERT_EQUAL(0, dataLinkLayer.call_calculate_checksum(0, 0));
+}
+
 int runUnityTests(void) {
   UNITY_BEGIN();
   RUN_TEST(test_bollocks_do_something_with_two_numbers);
+  RUN_TEST(test_data_link_layer_calculate_checksum);
   return UNITY_END();
 }
 

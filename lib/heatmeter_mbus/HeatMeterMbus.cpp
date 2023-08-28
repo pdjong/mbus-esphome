@@ -1,3 +1,5 @@
+#ifndef UNIT_TEST
+
 #include "esphome/core/log.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -277,3 +279,5 @@ namespace esphome
     }
   } // namespace heatmeter_mbus
 } // namespace esphome
+
+#endif // UNIT_TEST
