@@ -7,7 +7,11 @@ namespace heatmeter_mbus {
 static const char * TAG {"Kamstrup303WA02"};
 
 uint8_t Kamstrup303WA02::DataLinkLayer::calculate_checksum(const uint8_t* data, size_t length) const {
-  return 0;
+  uint8_t checksum { 0 };
+  for (size_t i = 0; i < length; ++i) {
+    checksum += data[i];
+  }
+  return checksum;
 }
 
 // bool Kamstrup303WA02::readData(Kamstrup303WA02::MeterData * const data) {
