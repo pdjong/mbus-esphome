@@ -56,7 +56,7 @@ class FakeUartInterface : public esphome::heatmeter_mbus::UartInterface {
     // Access / configure methods
     vector<WrittenArray> written_arrays_;
 
-    void set_fake_data_to_return(uint8_t* fake_data, size_t len) {
+    void set_fake_data_to_return(const uint8_t* fake_data, size_t len) {
       for (size_t i = 0; i < len; ++i) {
         this->fake_data_to_return_.push(fake_data[i]);
       }
@@ -81,5 +81,13 @@ class TestableDataLinkLayer : public esphome::heatmeter_mbus::Kamstrup303WA02::D
 
     uint8_t call_calculate_checksum(const uint8_t* data, size_t length) {
       return this->calculate_checksum(data, length);
+    }
+
+    bool call_snd_nke(const uint8_t address) {
+      return this->snd_nke(address);
+    }
+
+    bool get_next_req_ud2_fcb() {
+      return this->next_req_ud2_fcb_;
     }
 };

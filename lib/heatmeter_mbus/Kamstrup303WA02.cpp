@@ -7,6 +7,10 @@ namespace heatmeter_mbus {
 
 static const char * TAG {"Kamstrup303WA02"};
 
+bool Kamstrup303WA02::DataLinkLayer::snd_nke(const uint8_t address) {
+  return false;
+}
+
 // Slave must wait at least 11 bit times, and at max 330 bit times + 50ms before answering.
 // In case no answer within that time, retry at most twice.
 // (see 5.4 Communication Process)

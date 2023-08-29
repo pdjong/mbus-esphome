@@ -25,19 +25,20 @@ class Kamstrup303WA02 {
         DataLinkLayer(UartInterface* uart_interface) : uart_interface_(uart_interface) {}
 
       protected:
-        uint8_t calculate_checksum(const uint8_t* data, size_t length) const;
+        bool snd_nke(const uint8_t address);
         bool try_send_short_frame(const uint8_t c, const uint8_t a);
         void flush_rx_buffer();
         void send_short_frame(const uint8_t c, const uint8_t a);
         bool wait_for_incoming_data();
-
+        uint8_t calculate_checksum(const uint8_t* data, size_t length) const;
+        
         UartInterface* uart_interface_;
+        bool next_req_ud2_fcb_ { false };
 
       private:
         const uint8_t START_BYTE_SHORT_FRAME = 0x10;
         const uint8_t START_BYTE_CONTROL_AND_LONG_FRAME = 0x68;
         const uint8_t STOP_BYTE = 0x16;
-
     };
 
 };
