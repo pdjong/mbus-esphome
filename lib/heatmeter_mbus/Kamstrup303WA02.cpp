@@ -13,28 +13,28 @@ static const char * TAG {"Kamstrup303WA02"};
 bool Kamstrup303WA02::DataLinkLayer::try_send_short_frame(const uint8_t c, const uint8_t a) {
   bool success { false };
   bool dataIsReceived { false };
-  // flush_rx_buffer();
-  // for (uint8_t transmitAttempt {0}; transmitAttempt < 3 && !dataIsReceived; ++transmitAttempt) {
-  //   if (transmitAttempt > 0) {
-  //     ESP_LOGD(TAG, "Retry transmit short frame");
-  //   }
+  flush_rx_buffer();
+  for (uint8_t transmitAttempt {0}; transmitAttempt < 3 && !dataIsReceived; ++transmitAttempt) {
+    if (transmitAttempt > 0) {
+      ESP_LOGD(TAG, "Retry transmit short frame");
+    }
     send_short_frame(c, a);
     dataIsReceived = wait_for_incoming_data();
-  // }
+  }
   success = dataIsReceived;
   return success;
 }
 
-// void Kamstrup303WA02::DataLinkLayer::flush_rx_buffer() {
-//   while (uartDevice->available()) {
-//     int32_t byteCountInBuffer {uartDevice->available()};
-//     if (byteCountInBuffer > 255) {
-//       byteCountInBuffer = 255;
-//     }
-//     uint8_t bytesInBuffer[byteCountInBuffer];
-//     uartDevice->read_array(bytesInBuffer, byteCountInBuffer);
-//   }
-// }
+void Kamstrup303WA02::DataLinkLayer::flush_rx_buffer() {
+  while (this->uart_interface_->available()) {
+    int32_t byteCountInBuffer {this->uart_interface_->available()};
+    if (byteCountInBuffer > 255) {
+      byteCountInBuffer = 255;
+    }
+    uint8_t bytesInBuffer[byteCountInBuffer];
+    this->uart_interface_->read_array(bytesInBuffer, byteCountInBuffer);
+  }
+}
 
 void Kamstrup303WA02::DataLinkLayer::send_short_frame(const uint8_t c, const uint8_t a) {
   const uint8_t data[] = { c, a };
@@ -49,8 +49,9 @@ void Kamstrup303WA02::DataLinkLayer::send_short_frame(const uint8_t c, const uin
 bool Kamstrup303WA02::DataLinkLayer::wait_for_incoming_data() {
   bool dataReceived {false};
   // 330 bits + 50ms = 330 * 1000 / 2400 + 50 ms = 187,5 ms
-  delay(138);
-  for (uint16_t i {0}; i < 500; ++i) {
+  // Wait at least 11 bit times = 5ms
+  delay(5);
+  for (uint8_t i {0}; i < 185; ++i) {
     if (this->uart_interface_->available() > 0) {
       dataReceived = true;
       break;
@@ -58,7 +59,7 @@ bool Kamstrup303WA02::DataLinkLayer::wait_for_incoming_data() {
     delay(1);
   }
   if (!dataReceived) {
-    //ESP_LOGE(TAG, "waitForIncomingData - exit - No data received");
+    ESP_LOGE(TAG, "waitForIncomingData - exit - No data received");
   }
   return dataReceived;
 }
