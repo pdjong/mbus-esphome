@@ -39,6 +39,9 @@ class Kamstrup303WA02 {
         const uint8_t START_BYTE_SHORT_FRAME = 0x10;
         const uint8_t START_BYTE_CONTROL_AND_LONG_FRAME = 0x68;
         const uint8_t STOP_BYTE = 0x16;
+        const uint8_t C_FIELD_BIT_DIRECTION = 6;
+        const uint8_t C_FIELD_FUNCTION_SND_NKE = 0x0;
+
     };
 
 };

@@ -8,7 +8,15 @@ namespace heatmeter_mbus {
 static const char * TAG {"Kamstrup303WA02"};
 
 bool Kamstrup303WA02::DataLinkLayer::snd_nke(const uint8_t address) {
-  return false;
+  bool success { false };
+
+  const uint8_t c = (1 << C_FIELD_BIT_DIRECTION) | (C_FIELD_FUNCTION_SND_NKE);
+  success = try_send_short_frame(c, address);
+  if (success) {
+    this->next_req_ud2_fcb_ = true;
+  }
+  
+  return success;
 }
 
 // Slave must wait at least 11 bit times, and at max 330 bit times + 50ms before answering.
