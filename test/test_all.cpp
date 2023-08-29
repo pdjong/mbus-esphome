@@ -66,11 +66,9 @@ void test_data_link_layer_try_send_short_frame(void) {
   //     It should do a delay of just over 11 bits (11 bits * 1000 ms/s / 2400 bit/s = 4.58ms)
   //     After that delay it should prepare some return data (single byte should be okay)
   //     and set the return value of available() to > 0.
-  //  2. In another task, the testable DataLinkLayer can be created with the fake uart interface.
-  //     Then it can call call_try_send_short_frame(), and remember the return value;
-  //     When that is done, it can set a flag to indicate that the test can do its asserts.
-  //  3. Directly in the test function, these two tasks are created.
-  //     Then it waits for the flag. After that, it can assert everything is okay.
+  //  2. In the test function, the testable DataLinkLayer can be created with the fake uart interface.
+  //     Then it can use call_try_send_short_frame(), and remember the return value.
+  //     Then it waits for the call to finish. After that, it can assert everything is okay.
 
   FakeUartInterface uartInterface;
 
@@ -91,6 +89,20 @@ void test_data_link_layer_try_send_short_frame(void) {
 
   // Assert
   TEST_ASSERT_TRUE(actual_return_value);
+  // Check the sent data: should be a short frame!
+  // Start:     0x10
+  // C:         0x40
+  // A:         0x54
+  // Check sum: 0x94
+  // Stop:      0x16
+  TEST_ASSERT_TRUE(uartInterface.written_arrays_.size() > 0);
+  FakeUartInterface::WrittenArray actual_written_array = uartInterface.written_arrays_[0];
+  TEST_ASSERT_EQUAL(5, actual_written_array.len);
+  TEST_ASSERT_EQUAL(0x10, actual_written_array.data[0]);
+  TEST_ASSERT_EQUAL(0x40, actual_written_array.data[1]);
+  TEST_ASSERT_EQUAL(0x54, actual_written_array.data[2]);
+  TEST_ASSERT_EQUAL(0x94, actual_written_array.data[3]);
+  TEST_ASSERT_EQUAL(0x16, actual_written_array.data[4]);
 }
 
 int runUnityTests(void) {
