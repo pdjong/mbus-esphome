@@ -245,12 +245,68 @@ void test_data_link_layer_snd_nke_correct_response(void) {
   TEST_ASSERT_TRUE(dataLinkLayer.get_next_req_ud2_fcb());
 }
 
+void test_data_link_layer_snd_nke_incorrect_response(void) {
+  // What can be tested?
+  //  - C field in short frame:
+  //    FCB / FCV fields in C field: both should be 0
+  //    Function field in C field: should be 0
+  //    Bit 6 in C field: should be 1
+  //    In other words: C should be 0x40
+  //  - A field in short frame
+  //  - Rest of sent short frame
+  //  - Return value: false
+
+  // Arrange
+  FakeUartInterface uart_interface;
+  const uint8_t fake_data[] = { 0x00 };
+  FakeUartInterfaceTaskArgs args = { 
+    .uart_interface = &uart_interface,
+    .respond_to_nth_write = 1,
+    .delay_in_ms  = 5,
+    .data_to_return = fake_data,
+    .len_of_data_to_return = 1
+  };
+  xTaskCreatePinnedToCore(fake_uart_interface_task,
+                    "fake_uart_interface_task", // name
+                    20000,                      // stack size (in words)
+                    &args,                      // input params
+                    1,                          // priority
+                    nullptr,                    // Handle, not needed
+                    0                           // core
+  );
+
+  TestableDataLinkLayer dataLinkLayer(&uart_interface);
+
+  // Act
+  const uint8_t a = 0xB2;
+  const bool actual_return_value = dataLinkLayer.call_snd_nke(a);
+
+  // Assert
+  TEST_ASSERT_FALSE(actual_return_value);
+  
+  // Check the sent data: should be a short frame!
+  // Start:     0x10
+  // C:         0x40
+  // A:         0xB2
+  // Check sum: 0xF2
+  // Stop:      0x16
+  TEST_ASSERT_EQUAL(1, uart_interface.written_arrays_.size());
+  FakeUartInterface::WrittenArray actual_written_array = uart_interface.written_arrays_[0];
+  TEST_ASSERT_EQUAL(5, actual_written_array.len);
+  TEST_ASSERT_EQUAL(0x10, actual_written_array.data[0]);
+  TEST_ASSERT_EQUAL(0x40, actual_written_array.data[1]);
+  TEST_ASSERT_EQUAL(0xB2, actual_written_array.data[2]);
+  TEST_ASSERT_EQUAL(0xF2, actual_written_array.data[3]);
+  TEST_ASSERT_EQUAL(0x16, actual_written_array.data[4]);
+}
+
 int runUnityTests(void) {
   UNITY_BEGIN();
   RUN_TEST(test_data_link_layer_calculate_checksum);
   RUN_TEST(test_data_link_layer_try_send_short_frame_reply_to_first_request);
   RUN_TEST(test_data_link_layer_try_send_short_frame_reply_to_second_request);
   RUN_TEST(test_data_link_layer_snd_nke_correct_response);
+  RUN_TEST(test_data_link_layer_snd_nke_incorrect_response);
   return UNITY_END();
 }
 
