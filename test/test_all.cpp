@@ -45,11 +45,23 @@ void test_data_link_layer_calculate_checksum(void) {
   delete[] data;
 }
 
+typedef struct FakeUartInterfaceTaskArgs {
+  FakeUartInterface* uart_interface;
+  const uint8_t respond_to_nth_write;
+  const uint8_t delay_in_ms;
+} FakeUartInterfaceTaskArgs;
+
 void fake_uart_interface_task(void* param) {
-  FakeUartInterface *uartInterface = reinterpret_cast<FakeUartInterface*>(param);
-  while (!uartInterface->is_write_array_called()) {
-    vTaskDelay(1 / portTICK_PERIOD_MS);
+  FakeUartInterfaceTaskArgs *args = reinterpret_cast<FakeUartInterfaceTaskArgs*>(param);
+  FakeUartInterface *uartInterface = args->uart_interface;
+  uint8_t write_count { 0 };
+  while (write_count < args->respond_to_nth_write) {
+    while (!uartInterface->is_write_array_called()) {
+      vTaskDelay(1 / portTICK_PERIOD_MS);
+    }
+    ++write_count;
   }
+  delay(args->delay_in_ms);
   uint8_t *fake_data = new uint8_t[1] { 0xE5 };
   uartInterface->set_fake_data_to_return(fake_data, 1);
   vTaskDelete(NULL);
@@ -70,18 +82,22 @@ void test_data_link_layer_try_send_short_frame(void) {
   //     Then it can use call_try_send_short_frame(), and remember the return value.
   //     Then it waits for the call to finish. After that, it can assert everything is okay.
 
-  FakeUartInterface uartInterface;
-
+  FakeUartInterface uart_interface;
+  FakeUartInterfaceTaskArgs args = { 
+    .uart_interface = &uart_interface, 
+    .respond_to_nth_write = 1, 
+    .delay_in_ms  = 5 
+  };
   xTaskCreatePinnedToCore(fake_uart_interface_task,
                     "fake_uart_interface_task", // name
                     20000,                      // stack size (in words)
-                    &uartInterface,             // input params
+                    &args,                      // input params
                     1,                          // priority
                     nullptr,                    // Handle, not needed
                     0                           // core
   );
 
-  TestableDataLinkLayer dataLinkLayer(&uartInterface);
+  TestableDataLinkLayer dataLinkLayer(&uart_interface);
 
   const uint8_t c = 0x40;
   const uint8_t a = 0x54;
@@ -95,8 +111,8 @@ void test_data_link_layer_try_send_short_frame(void) {
   // A:         0x54
   // Check sum: 0x94
   // Stop:      0x16
-  TEST_ASSERT_TRUE(uartInterface.written_arrays_.size() > 0);
-  FakeUartInterface::WrittenArray actual_written_array = uartInterface.written_arrays_[0];
+  TEST_ASSERT_TRUE(uart_interface.written_arrays_.size() > 0);
+  FakeUartInterface::WrittenArray actual_written_array = uart_interface.written_arrays_[0];
   TEST_ASSERT_EQUAL(5, actual_written_array.len);
   TEST_ASSERT_EQUAL(0x10, actual_written_array.data[0]);
   TEST_ASSERT_EQUAL(0x40, actual_written_array.data[1]);
