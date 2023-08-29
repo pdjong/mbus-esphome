@@ -1,5 +1,6 @@
 #include <test_includes.h>
 #include "Kamstrup303WA02.h"
+#include <Arduino.h>
 
 namespace esphome {
 namespace heatmeter_mbus {
@@ -10,7 +11,56 @@ static const char * TAG {"Kamstrup303WA02"};
 // In case no answer within that time, retry at most twice.
 // (see 5.4 Communication Process)
 bool Kamstrup303WA02::DataLinkLayer::try_send_short_frame(const uint8_t c, const uint8_t a) {
-  return false;
+  bool success { false };
+  bool dataIsReceived { false };
+  // flush_rx_buffer();
+  // for (uint8_t transmitAttempt {0}; transmitAttempt < 3 && !dataIsReceived; ++transmitAttempt) {
+  //   if (transmitAttempt > 0) {
+  //     ESP_LOGD(TAG, "Retry transmit short frame");
+  //   }
+    send_short_frame(c, a);
+    dataIsReceived = wait_for_incoming_data();
+  // }
+  success = dataIsReceived;
+  return success;
+}
+
+// void Kamstrup303WA02::DataLinkLayer::flush_rx_buffer() {
+//   while (uartDevice->available()) {
+//     int32_t byteCountInBuffer {uartDevice->available()};
+//     if (byteCountInBuffer > 255) {
+//       byteCountInBuffer = 255;
+//     }
+//     uint8_t bytesInBuffer[byteCountInBuffer];
+//     uartDevice->read_array(bytesInBuffer, byteCountInBuffer);
+//   }
+// }
+
+void Kamstrup303WA02::DataLinkLayer::send_short_frame(const uint8_t c, const uint8_t a) {
+  const uint8_t data[] = { c, a };
+  const uint8_t checksum { calculate_checksum(data, 2) };
+  const uint8_t short_frame[] = { START_BYTE_SHORT_FRAME, c, a, checksum, STOP_BYTE };
+  this->uart_interface_->write_array(short_frame, 5);
+  delay(1);
+  this->uart_interface_->flush();
+  delay(1);
+}
+
+bool Kamstrup303WA02::DataLinkLayer::wait_for_incoming_data() {
+  bool dataReceived {false};
+  // 330 bits + 50ms = 330 * 1000 / 2400 + 50 ms = 187,5 ms
+  delay(138);
+  for (uint16_t i {0}; i < 500; ++i) {
+    if (this->uart_interface_->available() > 0) {
+      dataReceived = true;
+      break;
+    }
+    delay(1);
+  }
+  if (!dataReceived) {
+    //ESP_LOGE(TAG, "waitForIncomingData - exit - No data received");
+  }
+  return dataReceived;
 }
 
 uint8_t Kamstrup303WA02::DataLinkLayer::calculate_checksum(const uint8_t* data, size_t length) const {

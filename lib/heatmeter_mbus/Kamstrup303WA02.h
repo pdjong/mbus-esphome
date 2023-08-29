@@ -13,7 +13,7 @@ class UartInterface {
   public:
     virtual bool read_byte(uint8_t* data) = 0;
     virtual bool read_array(uint8_t* data, size_t len) = 0;
-    virtual bool write_array(uint8_t* data, size_t len) = 0;
+    virtual bool write_array(const uint8_t* data, size_t len) = 0;
     virtual int available() const = 0;
     virtual void flush() = 0;
 };
@@ -27,8 +27,17 @@ class Kamstrup303WA02 {
       protected:
         uint8_t calculate_checksum(const uint8_t* data, size_t length) const;
         bool try_send_short_frame(const uint8_t c, const uint8_t a);
+        void flush_rx_buffer();
+        void send_short_frame(const uint8_t c, const uint8_t a);
+        bool wait_for_incoming_data();
 
-        UartInterface* uart_interface_;  
+        UartInterface* uart_interface_;
+
+      private:
+        const uint8_t START_BYTE_SHORT_FRAME = 0x10;
+        const uint8_t START_BYTE_CONTROL_AND_LONG_FRAME = 0x68;
+        const uint8_t STOP_BYTE = 0x16;
+
     };
 
 };

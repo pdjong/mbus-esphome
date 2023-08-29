@@ -2,6 +2,8 @@
 #include <test_includes.h>
 #include <TestableDataLinkLayer.h>
 #include <unity.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 void setUp(void) {}
 void tearDown(void) {}
@@ -43,7 +45,15 @@ void test_data_link_layer_calculate_checksum(void) {
   delete[] data;
 }
 
-bool test_data_link_layer_try_send_short_frame_done = false;
+void fake_uart_interface_task(void* param) {
+  FakeUartInterface *uartInterface = reinterpret_cast<FakeUartInterface*>(param);
+  while (!uartInterface->is_write_array_called()) {
+    vTaskDelay(1 / portTICK_PERIOD_MS);
+  }
+  uint8_t *fake_data = new uint8_t[1] { 0xE5 };
+  uartInterface->set_fake_data_to_return(fake_data, 1);
+  vTaskDelete(NULL);
+}
 
 void test_data_link_layer_try_send_short_frame(void) {
   // After the request is sent, the fake slave responds after the minimum time.
@@ -62,17 +72,25 @@ void test_data_link_layer_try_send_short_frame(void) {
   //  3. Directly in the test function, these two tasks are created.
   //     Then it waits for the flag. After that, it can assert everything is okay.
 
-      // xTaskCreatePinnedToCore(HeatMeterMbus::read_mbus_task_loop,
-      //                   "mbus_task", // name
-      //                   10000,       // stack size (in words)
-      //                   this,        // input params
-      //                   1,           // priority
-      //                   nullptr,     // Handle, not needed
-      //                   0            // core
-      // );
+  FakeUartInterface uartInterface;
 
-  while (!test_data_link_layer_try_send_short_frame_done) {
-  }
+  xTaskCreatePinnedToCore(fake_uart_interface_task,
+                    "fake_uart_interface_task", // name
+                    20000,                      // stack size (in words)
+                    &uartInterface,             // input params
+                    1,                          // priority
+                    nullptr,                    // Handle, not needed
+                    0                           // core
+  );
+
+  TestableDataLinkLayer dataLinkLayer(&uartInterface);
+
+  const uint8_t c = 0x40;
+  const uint8_t a = 0x54;
+  const bool actual_return_value = dataLinkLayer.call_try_send_short_frame(c, a);
+
+  // Assert
+  TEST_ASSERT_TRUE(actual_return_value);
 }
 
 int runUnityTests(void) {
