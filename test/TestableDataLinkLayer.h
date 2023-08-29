@@ -43,7 +43,7 @@ class FakeUartInterface : public esphome::heatmeter_mbus::UartInterface {
       }
       WrittenArray writtenArray = { .data = copied_data, .len = len };
       this->written_arrays_.push_back(writtenArray);
-      this->is_write_array_called_ = true;
+      ++(this->write_array_call_count_);
       return true;
     }
 
@@ -62,13 +62,13 @@ class FakeUartInterface : public esphome::heatmeter_mbus::UartInterface {
       }
     }
 
-    bool is_write_array_called() const {
-      return this->is_write_array_called_;
+    uint8_t write_array_call_count() const {
+      return this->write_array_call_count_;
     }
 
   protected:
     queue<uint8_t> fake_data_to_return_;
-    bool is_write_array_called_ { false };
+    uint8_t write_array_call_count_ { 0 };
 };
 
 class TestableDataLinkLayer : public esphome::heatmeter_mbus::Kamstrup303WA02::DataLinkLayer {
