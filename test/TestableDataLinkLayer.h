@@ -37,7 +37,11 @@ class FakeUartInterface : public esphome::heatmeter_mbus::UartInterface {
     }
 
     virtual bool write_array(const uint8_t* data, size_t len) {
-      WrittenArray writtenArray = { .data = data, .len = len };
+      uint8_t *copied_data = new uint8_t[len];
+      for (size_t i = 0; i < len; ++i) {
+        copied_data[i] = data[i];
+      }
+      WrittenArray writtenArray = { .data = copied_data, .len = len };
       this->written_arrays_.push_back(writtenArray);
       this->is_write_array_called_ = true;
       return true;
