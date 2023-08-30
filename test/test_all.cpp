@@ -5,6 +5,8 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
+using namespace esphome::heatmeter_mbus;
+
 void setUp(void) {}
 void tearDown(void) {}
 
@@ -60,8 +62,6 @@ void fake_uart_interface_task(void* param) {
     vTaskDelay(1 / portTICK_PERIOD_MS);
   }
   delay(args->delay_in_ms);
-  //uint8_t *fake_data = new uint8_t[1] { 0xE5 };
-  //uartInterface->set_fake_data_to_return(fake_data, 1);
   uartInterface->set_fake_data_to_return(args->data_to_return, args->len_of_data_to_return);
   vTaskDelete(NULL);
 }
@@ -300,6 +300,286 @@ void test_data_link_layer_snd_nke_incorrect_response(void) {
   TEST_ASSERT_EQUAL(0x16, actual_written_array.data[4]);
 }
 
+// Variation points of req_ud2:
+//  - Response comes or not
+//  - Response contains correct or incorrect A field
+//  - Response contains correct or incorrect C function field
+//  - Response contains correct or incorrect check sum
+//  - Response contains correct or incorrect START / STOP bytes
+//  - Response contains identical or different L fields
+// Other things to check:
+//  - Correct A field is sent
+//  - Correct C function field is sent
+//  - Correct user data is put in LONG_FRAME
+void test_data_link_layer_req_ud2_check_sending_correct_data(void) {
+  // What can be tested?
+  //  - C field in short frame:
+  //    FCV field in C field: should be 1
+  //    FCB field in C field: should be 1
+  //    Function field in C field: should be 0xB
+  //    Bit 6 in C field: should be 1
+  //  - A field in short frame
+  //  - Rest of sent short frame
+  //  - Return value: true
+  //  - user_data in LONG_FRAME
+
+  // Arrange
+  FakeUartInterface uart_interface;
+  const uint8_t fake_data[] = { 0x68, 0x06, 0x06, 0x68, 0x08, 0xB2, 0x72, 0x03, 0x02, 0x01, 0x32, 0x16 };
+  FakeUartInterfaceTaskArgs args = { 
+    .uart_interface = &uart_interface,
+    .respond_to_nth_write = 1,
+    .delay_in_ms  = 5,
+    .data_to_return = fake_data,
+    .len_of_data_to_return = 12
+  };
+  xTaskCreatePinnedToCore(fake_uart_interface_task,
+                    "fake_uart_interface_task", // name
+                    20000,                      // stack size (in words)
+                    &args,                      // input params
+                    1,                          // priority
+                    nullptr,                    // Handle, not needed
+                    0                           // core
+  );
+
+  TestableDataLinkLayer dataLinkLayer(&uart_interface);
+
+  // Act
+  const uint8_t a = 0xB2;
+  Kamstrup303WA02::DataLinkLayer::LongFrame response_frame;
+  const bool actual_return_value = dataLinkLayer.req_ud2(a, &response_frame);
+
+  // Assert
+  // Check the sent data: should be a short frame!
+  // Start:     0x10
+  // C:         0x7B
+  // A:         0xB2
+  // Check sum: 0x2D
+  // Stop:      0x16
+  TEST_ASSERT_EQUAL(1, uart_interface.written_arrays_.size());
+  FakeUartInterface::WrittenArray actual_written_array = uart_interface.written_arrays_[0];
+  TEST_ASSERT_EQUAL(5, actual_written_array.len);
+  TEST_ASSERT_EQUAL(0x10, actual_written_array.data[0]);
+  TEST_ASSERT_EQUAL(0x7B, actual_written_array.data[1]);
+  TEST_ASSERT_EQUAL(0xB2, actual_written_array.data[2]);
+  TEST_ASSERT_EQUAL(0x2D, actual_written_array.data[3]);
+  TEST_ASSERT_EQUAL(0x16, actual_written_array.data[4]);
+}
+
+void test_data_link_layer_req_ud2_correct_response(void) {
+  // What can be tested?
+  //  - C field in short frame:
+  //    FCV field in C field: should be 1
+  //    FCB field in C field: should be 1
+  //    Function field in C field: should be 0xB
+  //    Bit 6 in C field: should be 1
+  //  - A field in short frame
+  //  - Rest of sent short frame
+  //  - Return value: true
+  //  - user_data in LONG_FRAME
+
+  // Arrange
+  FakeUartInterface uart_interface;
+  const uint8_t fake_data[] = { 0x68, 0x06, 0x06, 0x68, 0x08, 0xB2, 0x72, 0x03, 0x02, 0x01, 0x32, 0x16 };
+  FakeUartInterfaceTaskArgs args = { 
+    .uart_interface = &uart_interface,
+    .respond_to_nth_write = 1,
+    .delay_in_ms  = 5,
+    .data_to_return = fake_data,
+    .len_of_data_to_return = 12
+  };
+  xTaskCreatePinnedToCore(fake_uart_interface_task,
+                    "fake_uart_interface_task", // name
+                    20000,                      // stack size (in words)
+                    &args,                      // input params
+                    1,                          // priority
+                    nullptr,                    // Handle, not needed
+                    0                           // core
+  );
+
+  TestableDataLinkLayer dataLinkLayer(&uart_interface);
+
+  // Act
+  const uint8_t a = 0xB2;
+  Kamstrup303WA02::DataLinkLayer::LongFrame response_frame;
+  const bool actual_return_value = dataLinkLayer.req_ud2(a, &response_frame);
+
+  // Assert
+  TEST_ASSERT_TRUE(actual_return_value);
+  
+  // Check fields and user data in telegram
+  TEST_ASSERT_EQUAL(6, response_frame.l);
+  TEST_ASSERT_EQUAL(0x08, response_frame.c);
+  TEST_ASSERT_EQUAL(0xB2, response_frame.a);
+  TEST_ASSERT_EQUAL(0x72, response_frame.ci);
+  TEST_ASSERT_EQUAL(0x03, response_frame.user_data[0]);
+  TEST_ASSERT_EQUAL(0x02, response_frame.user_data[1]);
+  TEST_ASSERT_EQUAL(0x01, response_frame.user_data[2]);
+}
+
+void test_data_link_layer_req_ud2_no_response(void) {
+  // What can be tested?
+  //  - Return value: false
+
+  // Arrange
+  FakeUartInterface uart_interface;
+  TestableDataLinkLayer dataLinkLayer(&uart_interface);
+
+  // Act
+  const uint8_t a = 0xB2;
+  Kamstrup303WA02::DataLinkLayer::LongFrame response_frame;
+  const bool actual_return_value = dataLinkLayer.req_ud2(a, &response_frame);
+
+  // Assert
+  TEST_ASSERT_FALSE(actual_return_value);
+}
+
+void test_data_link_layer_req_ud2_incorrect_a_field(void) {
+  // What can be tested?
+  //  - C field in short frame:
+  //    FCV field in C field: should be 1
+  //    FCB field in C field: should be 1
+  //    Function field in C field: should be 0xB
+  //    Bit 6 in C field: should be 1
+  //  - A field in short frame
+  //  - Rest of sent short frame
+  //  - Return value: true
+  //  - user_data in LONG_FRAME
+
+  // Arrange
+  FakeUartInterface uart_interface;
+  const uint8_t fake_data_with_incorrect_a_field[] = { 0x68, 0x06, 0x06, 0x68, 0x08, 0x10, 0x72, 0x03, 0x02, 0x01, 0x90, 0x16 };
+  FakeUartInterfaceTaskArgs args = { 
+    .uart_interface = &uart_interface,
+    .respond_to_nth_write = 1,
+    .delay_in_ms  = 5,
+    .data_to_return = fake_data_with_incorrect_a_field,
+    .len_of_data_to_return = 12
+  };
+  xTaskCreatePinnedToCore(fake_uart_interface_task,
+                    "fake_uart_interface_task", // name
+                    30000,                      // stack size (in words)
+                    &args,                      // input params
+                    1,                          // priority
+                    nullptr,                    // Handle, not needed
+                    0                           // core
+  );
+
+  TestableDataLinkLayer dataLinkLayer(&uart_interface);
+
+  // Act
+  const uint8_t a = 0xB2;
+  Kamstrup303WA02::DataLinkLayer::LongFrame response_frame;
+  const bool actual_return_value = dataLinkLayer.req_ud2(a, &response_frame);
+
+  // Assert
+  TEST_ASSERT_FALSE(actual_return_value);
+}
+
+void test_data_link_layer_req_ud2_incorrect_function(void) {
+  // What can be tested?
+  //  - C field in short frame:
+  //    FCV field in C field: should be 1
+  //    FCB field in C field: should be 1
+  //    Function field in C field: should be 0xB
+  //    Bit 6 in C field: should be 1
+  //  - A field in short frame
+  //  - Rest of sent short frame
+  //  - Return value: true
+  //  - user_data in LONG_FRAME
+
+  // Arrange
+  FakeUartInterface uart_interface;
+  const uint8_t fake_data_with_incorrect_function[] = { 0x68, 0x06, 0x06, 0x68, 0x08, 0xB2, 0x03, 0x03, 0x02, 0x01, 0xC3, 0x16 };
+  FakeUartInterfaceTaskArgs args = { 
+    .uart_interface = &uart_interface,
+    .respond_to_nth_write = 1,
+    .delay_in_ms  = 5,
+    .data_to_return = fake_data_with_incorrect_function,
+    .len_of_data_to_return = 12
+  };
+  xTaskCreatePinnedToCore(fake_uart_interface_task,
+                    "fake_uart_interface_task", // name
+                    20000,                      // stack size (in words)
+                    &args,                      // input params
+                    1,                          // priority
+                    nullptr,                    // Handle, not needed
+                    0                           // core
+  );
+
+  TestableDataLinkLayer dataLinkLayer(&uart_interface);
+
+  // Act
+  const uint8_t a = 0xB2;
+  Kamstrup303WA02::DataLinkLayer::LongFrame response_frame;
+  const bool actual_return_value = dataLinkLayer.req_ud2(a, &response_frame);
+
+  // Assert
+  TEST_ASSERT_FALSE(actual_return_value);
+}
+
+void test_data_link_layer_req_ud2_incorrect_check_sum(void) {
+  // Arrange
+  FakeUartInterface uart_interface;
+  const uint8_t fake_data[] = { 0x68, 0x06, 0x06, 0x68, 0x08, 0xB2, 0x72, 0x03, 0x02, 0x01, 0xAA, 0x16 };
+  FakeUartInterfaceTaskArgs args = { 
+    .uart_interface = &uart_interface,
+    .respond_to_nth_write = 1,
+    .delay_in_ms  = 5,
+    .data_to_return = fake_data,
+    .len_of_data_to_return = 12
+  };
+  xTaskCreatePinnedToCore(fake_uart_interface_task,
+                    "fake_uart_interface_task", // name
+                    20000,                      // stack size (in words)
+                    &args,                      // input params
+                    1,                          // priority
+                    nullptr,                    // Handle, not needed
+                    0                           // core
+  );
+
+  TestableDataLinkLayer dataLinkLayer(&uart_interface);
+
+  // Act
+  const uint8_t a = 0xB2;
+  Kamstrup303WA02::DataLinkLayer::LongFrame response_frame;
+  const bool actual_return_value = dataLinkLayer.req_ud2(a, &response_frame);
+
+  // Assert
+  TEST_ASSERT_FALSE(actual_return_value);
+}
+
+void test_data_link_layer_req_ud2_different_l_fields(void) {
+  // Arrange
+  FakeUartInterface uart_interface;
+  const uint8_t fake_data[] = { 0x68, 0x06, 0x05, 0x68, 0x08, 0xB2, 0x72, 0x03, 0x02, 0x01, 0x32, 0x16 };
+  FakeUartInterfaceTaskArgs args = { 
+    .uart_interface = &uart_interface,
+    .respond_to_nth_write = 1,
+    .delay_in_ms  = 5,
+    .data_to_return = fake_data,
+    .len_of_data_to_return = 12
+  };
+  xTaskCreatePinnedToCore(fake_uart_interface_task,
+                    "fake_uart_interface_task", // name
+                    30000,                      // stack size (in words)
+                    &args,                      // input params
+                    1,                          // priority
+                    nullptr,                    // Handle, not needed
+                    0                           // core
+  );
+
+  TestableDataLinkLayer dataLinkLayer(&uart_interface);
+
+  // Act
+  const uint8_t a = 0xB2;
+  Kamstrup303WA02::DataLinkLayer::LongFrame response_frame;
+  const bool actual_return_value = dataLinkLayer.req_ud2(a, &response_frame);
+
+  // Assert
+  TEST_ASSERT_FALSE(actual_return_value);
+}
+
 int runUnityTests(void) {
   UNITY_BEGIN();
   RUN_TEST(test_data_link_layer_calculate_checksum);
@@ -307,6 +587,13 @@ int runUnityTests(void) {
   RUN_TEST(test_data_link_layer_try_send_short_frame_reply_to_second_request);
   RUN_TEST(test_data_link_layer_snd_nke_correct_response);
   RUN_TEST(test_data_link_layer_snd_nke_incorrect_response);
+  RUN_TEST(test_data_link_layer_req_ud2_check_sending_correct_data);
+  RUN_TEST(test_data_link_layer_req_ud2_correct_response);
+  RUN_TEST(test_data_link_layer_req_ud2_no_response);
+  RUN_TEST(test_data_link_layer_req_ud2_incorrect_a_field);
+  RUN_TEST(test_data_link_layer_req_ud2_incorrect_function);
+  RUN_TEST(test_data_link_layer_req_ud2_incorrect_check_sum);
+  RUN_TEST(test_data_link_layer_req_ud2_different_l_fields);
   return UNITY_END();
 }
 
