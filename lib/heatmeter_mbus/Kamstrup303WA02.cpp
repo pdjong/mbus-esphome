@@ -8,6 +8,7 @@ namespace heatmeter_mbus {
 static const char * TAG {"Kamstrup303WA02"};
 
 bool Kamstrup303WA02::DataLinkLayer::req_ud2(const uint8_t address, LongFrame* response_frame) {
+  response_frame->user_data = new uint8_t[20];
   return false;
 }
 

@@ -312,17 +312,6 @@ void test_data_link_layer_snd_nke_incorrect_response(void) {
 //  - Correct C function field is sent
 //  - Correct user data is put in LONG_FRAME
 void test_data_link_layer_req_ud2_check_sending_correct_data(void) {
-  // What can be tested?
-  //  - C field in short frame:
-  //    FCV field in C field: should be 1
-  //    FCB field in C field: should be 1
-  //    Function field in C field: should be 0xB
-  //    Bit 6 in C field: should be 1
-  //  - A field in short frame
-  //  - Rest of sent short frame
-  //  - Return value: true
-  //  - user_data in LONG_FRAME
-
   // Arrange
   FakeUartInterface uart_interface;
   const uint8_t fake_data[] = { 0x68, 0x06, 0x06, 0x68, 0x08, 0xB2, 0x72, 0x03, 0x02, 0x01, 0x32, 0x16 };
@@ -335,7 +324,7 @@ void test_data_link_layer_req_ud2_check_sending_correct_data(void) {
   };
   xTaskCreatePinnedToCore(fake_uart_interface_task,
                     "fake_uart_interface_task", // name
-                    20000,                      // stack size (in words)
+                    30000,                      // stack size (in words)
                     &args,                      // input params
                     1,                          // priority
                     nullptr,                    // Handle, not needed
@@ -367,17 +356,6 @@ void test_data_link_layer_req_ud2_check_sending_correct_data(void) {
 }
 
 void test_data_link_layer_req_ud2_correct_response(void) {
-  // What can be tested?
-  //  - C field in short frame:
-  //    FCV field in C field: should be 1
-  //    FCB field in C field: should be 1
-  //    Function field in C field: should be 0xB
-  //    Bit 6 in C field: should be 1
-  //  - A field in short frame
-  //  - Rest of sent short frame
-  //  - Return value: true
-  //  - user_data in LONG_FRAME
-
   // Arrange
   FakeUartInterface uart_interface;
   const uint8_t fake_data[] = { 0x68, 0x06, 0x06, 0x68, 0x08, 0xB2, 0x72, 0x03, 0x02, 0x01, 0x32, 0x16 };
@@ -390,7 +368,7 @@ void test_data_link_layer_req_ud2_correct_response(void) {
   };
   xTaskCreatePinnedToCore(fake_uart_interface_task,
                     "fake_uart_interface_task", // name
-                    20000,                      // stack size (in words)
+                    30000,                      // stack size (in words)
                     &args,                      // input params
                     1,                          // priority
                     nullptr,                    // Handle, not needed
@@ -418,9 +396,6 @@ void test_data_link_layer_req_ud2_correct_response(void) {
 }
 
 void test_data_link_layer_req_ud2_no_response(void) {
-  // What can be tested?
-  //  - Return value: false
-
   // Arrange
   FakeUartInterface uart_interface;
   TestableDataLinkLayer dataLinkLayer(&uart_interface);
@@ -435,17 +410,6 @@ void test_data_link_layer_req_ud2_no_response(void) {
 }
 
 void test_data_link_layer_req_ud2_incorrect_a_field(void) {
-  // What can be tested?
-  //  - C field in short frame:
-  //    FCV field in C field: should be 1
-  //    FCB field in C field: should be 1
-  //    Function field in C field: should be 0xB
-  //    Bit 6 in C field: should be 1
-  //  - A field in short frame
-  //  - Rest of sent short frame
-  //  - Return value: true
-  //  - user_data in LONG_FRAME
-
   // Arrange
   FakeUartInterface uart_interface;
   const uint8_t fake_data_with_incorrect_a_field[] = { 0x68, 0x06, 0x06, 0x68, 0x08, 0x10, 0x72, 0x03, 0x02, 0x01, 0x90, 0x16 };
@@ -477,17 +441,6 @@ void test_data_link_layer_req_ud2_incorrect_a_field(void) {
 }
 
 void test_data_link_layer_req_ud2_incorrect_function(void) {
-  // What can be tested?
-  //  - C field in short frame:
-  //    FCV field in C field: should be 1
-  //    FCB field in C field: should be 1
-  //    Function field in C field: should be 0xB
-  //    Bit 6 in C field: should be 1
-  //  - A field in short frame
-  //  - Rest of sent short frame
-  //  - Return value: true
-  //  - user_data in LONG_FRAME
-
   // Arrange
   FakeUartInterface uart_interface;
   const uint8_t fake_data_with_incorrect_function[] = { 0x68, 0x06, 0x06, 0x68, 0x08, 0xB2, 0x03, 0x03, 0x02, 0x01, 0xC3, 0x16 };
@@ -500,7 +453,7 @@ void test_data_link_layer_req_ud2_incorrect_function(void) {
   };
   xTaskCreatePinnedToCore(fake_uart_interface_task,
                     "fake_uart_interface_task", // name
-                    20000,                      // stack size (in words)
+                    30000,                      // stack size (in words)
                     &args,                      // input params
                     1,                          // priority
                     nullptr,                    // Handle, not needed
@@ -512,7 +465,7 @@ void test_data_link_layer_req_ud2_incorrect_function(void) {
   // Act
   const uint8_t a = 0xB2;
   Kamstrup303WA02::DataLinkLayer::LongFrame response_frame;
-  const bool actual_return_value = dataLinkLayer.req_ud2(a, &response_frame);
+  const bool actual_return_value = true; // dataLinkLayer.req_ud2(a, &response_frame);
 
   // Assert
   TEST_ASSERT_FALSE(actual_return_value);
@@ -531,7 +484,7 @@ void test_data_link_layer_req_ud2_incorrect_check_sum(void) {
   };
   xTaskCreatePinnedToCore(fake_uart_interface_task,
                     "fake_uart_interface_task", // name
-                    20000,                      // stack size (in words)
+                    30000,                      // stack size (in words)
                     &args,                      // input params
                     1,                          // priority
                     nullptr,                    // Handle, not needed
