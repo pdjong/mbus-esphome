@@ -22,7 +22,16 @@ class Kamstrup303WA02 {
   public:
     class DataLinkLayer {
       public:
+        typedef struct LongFrame {
+          uint8_t l;
+          uint8_t c;
+          uint8_t a;
+          uint8_t ci;
+          uint8_t check_sum;
+          uint8_t* user_data;
+        } LongFrame;
         DataLinkLayer(UartInterface* uart_interface) : uart_interface_(uart_interface) {}
+        bool req_ud2(const uint8_t address, LongFrame* response_frame);
         bool snd_nke(const uint8_t address);
 
       protected:
