@@ -83,10 +83,6 @@ class TestableDataLinkLayer : public esphome::heatmeter_mbus::Kamstrup303WA02::D
       return this->calculate_checksum(data, length);
     }
 
-    bool call_snd_nke(const uint8_t address) {
-      return this->snd_nke(address);
-    }
-
     bool get_next_req_ud2_fcb() {
       return this->next_req_ud2_fcb_;
     }

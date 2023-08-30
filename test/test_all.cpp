@@ -221,7 +221,7 @@ void test_data_link_layer_snd_nke_correct_response(void) {
 
   // Act
   const uint8_t a = 0xB2;
-  const bool actual_return_value = dataLinkLayer.call_snd_nke(a);
+  const bool actual_return_value = dataLinkLayer.snd_nke(a);
 
   // Assert
   TEST_ASSERT_TRUE(actual_return_value);
@@ -279,7 +279,7 @@ void test_data_link_layer_snd_nke_incorrect_response(void) {
 
   // Act
   const uint8_t a = 0xB2;
-  const bool actual_return_value = dataLinkLayer.call_snd_nke(a);
+  const bool actual_return_value = dataLinkLayer.snd_nke(a);
 
   // Assert
   TEST_ASSERT_FALSE(actual_return_value);

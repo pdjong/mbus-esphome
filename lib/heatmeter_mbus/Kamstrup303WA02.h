@@ -23,9 +23,9 @@ class Kamstrup303WA02 {
     class DataLinkLayer {
       public:
         DataLinkLayer(UartInterface* uart_interface) : uart_interface_(uart_interface) {}
+        bool snd_nke(const uint8_t address);
 
       protected:
-        bool snd_nke(const uint8_t address);
         bool try_send_short_frame(const uint8_t c, const uint8_t a);
         void flush_rx_buffer();
         void send_short_frame(const uint8_t c, const uint8_t a);
