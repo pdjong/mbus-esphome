@@ -8,8 +8,69 @@ namespace heatmeter_mbus {
 static const char * TAG {"Kamstrup303WA02"};
 
 bool Kamstrup303WA02::DataLinkLayer::req_ud2(const uint8_t address, LongFrame* response_frame) {
-  response_frame->user_data = new uint8_t[20];
-  return false;
+  bool success { false };
+
+  const uint8_t fcb = this->next_req_ud2_fcb_ ? 1u : 0u;
+  const uint8_t c = (1 << C_FIELD_BIT_DIRECTION) | (fcb << C_FIELD_BIT_FCB) | (1 << C_FIELD_BIT_FCV) | C_FIELD_FUNCTION_REQ_UD2;
+  bool received_response_to_request = this->try_send_short_frame(c, address);
+  if (received_response_to_request) {
+    success = this->parse_long_frame_response(response_frame);
+  }
+
+  if (success) {
+    this->next_req_ud2_fcb_ = !this->next_req_ud2_fcb_;
+  }
+  return success;
+}
+
+bool Kamstrup303WA02::DataLinkLayer::parse_long_frame_response(Kamstrup303WA02::DataLinkLayer::LongFrame* long_frame) {
+
+  uint8_t current_byte { 0 };
+  // Check start byte
+  if (!this->read_next_byte(&current_byte) || (current_byte != START_BYTE_CONTROL_AND_LONG_FRAME)) {
+    this->flush_rx_buffer();
+    return false;
+  }
+
+  // Check two identical L fields
+  uint8_t first_l_field { 0 };
+  uint8_t second_l_field { 0 };
+  if (!this->read_next_byte(&first_l_field) || !this->read_next_byte(&second_l_field)) {
+    this->flush_rx_buffer();
+    return false;
+  }
+  if (first_l_field != second_l_field) {
+    this->flush_rx_buffer();
+    return false;
+  }
+
+  // Check 2nd start byte
+  if (!this->read_next_byte(&current_byte) || (current_byte != START_BYTE_CONTROL_AND_LONG_FRAME)) {
+    this->flush_rx_buffer();
+    return false;
+  }
+  
+  // Check C field
+  if (!this->read_next_byte(&long_frame->c) || ((long_frame->c & 0x0F) != 0x08) || ((long_frame->c & 0xC0) != 0x00)) {
+    this->flush_rx_buffer();
+    return false;
+  }
+
+  // TODO: A, CI, user_data
+  return true;
+}
+
+bool Kamstrup303WA02::DataLinkLayer::read_next_byte(uint8_t* received_byte) {
+  const uint32_t time_before_starting_to_wait { millis() };
+	while (this->uart_interface_->available() == 0) {
+    delay(1);
+    if (millis() - time_before_starting_to_wait > 150) {
+      ESP_LOGE(TAG, "No data available after timeout");
+      return false;
+    }
+  }
+  this->uart_interface_->read_byte(received_byte);
+	return true;
 }
 
 bool Kamstrup303WA02::DataLinkLayer::snd_nke(const uint8_t address) {
@@ -72,6 +133,7 @@ void Kamstrup303WA02::DataLinkLayer::send_short_frame(const uint8_t c, const uin
   delay(1);
 }
 
+// TODO: rename to wait_for_incoming_telegram
 bool Kamstrup303WA02::DataLinkLayer::wait_for_incoming_data() {
   bool dataReceived {false};
   // 330 bits + 50ms = 330 * 1000 / 2400 + 50 ms = 187,5 ms

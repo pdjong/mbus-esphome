@@ -27,7 +27,7 @@ class Kamstrup303WA02 {
           uint8_t c;
           uint8_t a;
           uint8_t ci;
-          uint8_t check_sum;
+          // uint8_t check_sum;
           uint8_t* user_data;
         } LongFrame;
         DataLinkLayer(UartInterface* uart_interface) : uart_interface_(uart_interface) {}
@@ -42,7 +42,7 @@ class Kamstrup303WA02 {
         uint8_t calculate_checksum(const uint8_t* data, size_t length) const;
         
         UartInterface* uart_interface_;
-        bool next_req_ud2_fcb_ { false };
+        bool next_req_ud2_fcb_ { true };
 
       private:
         const uint8_t START_BYTE_SINGLE_CHARACTER = 0xE5;
@@ -50,8 +50,13 @@ class Kamstrup303WA02 {
         const uint8_t START_BYTE_CONTROL_AND_LONG_FRAME = 0x68;
         const uint8_t STOP_BYTE = 0x16;
         const uint8_t C_FIELD_BIT_DIRECTION = 6;
+        const uint8_t C_FIELD_BIT_FCB = 5;
+        const uint8_t C_FIELD_BIT_FCV = 4;
         const uint8_t C_FIELD_FUNCTION_SND_NKE = 0x0;
+        const uint8_t C_FIELD_FUNCTION_REQ_UD2 = 0xB;
 
+        bool parse_long_frame_response(LongFrame* longFrame);
+        bool read_next_byte(uint8_t* received_byte);
     };
 
 };
