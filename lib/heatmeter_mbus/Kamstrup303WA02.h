@@ -36,6 +36,7 @@ class Kamstrup303WA02 {
         bool next_req_ud2_fcb_ { false };
 
       private:
+        const uint8_t START_BYTE_SINGLE_CHARACTER = 0xE5;
         const uint8_t START_BYTE_SHORT_FRAME = 0x10;
         const uint8_t START_BYTE_CONTROL_AND_LONG_FRAME = 0x68;
         const uint8_t STOP_BYTE = 0x16;

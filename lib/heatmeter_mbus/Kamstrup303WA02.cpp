@@ -11,11 +11,20 @@ bool Kamstrup303WA02::DataLinkLayer::snd_nke(const uint8_t address) {
   bool success { false };
 
   const uint8_t c = (1 << C_FIELD_BIT_DIRECTION) | (C_FIELD_FUNCTION_SND_NKE);
-  success = try_send_short_frame(c, address);
-  if (success) {
-    this->next_req_ud2_fcb_ = true;
+  bool received_response_to_short_frame = try_send_short_frame(c, address);
+  if (received_response_to_short_frame) {
+    uint8_t received_byte { 0 };
+    this->uart_interface_->read_byte(&received_byte);
+    if (START_BYTE_SINGLE_CHARACTER == received_byte) {
+      success = true;
+      this->next_req_ud2_fcb_ = true;
+    } else {
+      ESP_LOGE(TAG, "Wrong answer to SND_NKE: %X", received_byte);
+    }
+  } else {
+    ESP_LOGE(TAG, "No response to SND_NKE");
   }
-  
+
   return success;
 }
 
