@@ -465,7 +465,7 @@ void test_data_link_layer_req_ud2_incorrect_function(void) {
   // Act
   const uint8_t a = 0xB2;
   Kamstrup303WA02::DataLinkLayer::LongFrame response_frame;
-  const bool actual_return_value = true; // dataLinkLayer.req_ud2(a, &response_frame);
+  const bool actual_return_value = dataLinkLayer.req_ud2(a, &response_frame);
 
   // Assert
   TEST_ASSERT_FALSE(actual_return_value);
