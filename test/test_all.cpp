@@ -460,7 +460,7 @@ void test_data_link_layer_req_ud2_incorrect_a_field(void) {
 void test_data_link_layer_req_ud2_incorrect_function(void) {
   // Arrange
   FakeUartInterface uart_interface;
-  const uint8_t fake_data_with_incorrect_function[] = { 0x68, 0x06, 0x06, 0x68, 0x08, 0xB2, 0x03, 0x03, 0x02, 0x01, 0xC3, 0x16 };
+  const uint8_t fake_data_with_incorrect_function[] = { 0x68, 0x06, 0x06, 0x68, 0x00, 0xB2, 0x72, 0x03, 0x02, 0x01, 0x2A, 0x16 };
   FakeUartInterfaceTaskArgs args = { 
     .uart_interface = &uart_interface,
     .respond_to_nth_write = 1,
