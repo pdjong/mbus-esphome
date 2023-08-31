@@ -47,6 +47,23 @@ void test_data_link_layer_calculate_checksum(void) {
   delete[] data;
 }
 
+void test_data_link_layer_calculate_checksum_with_long_frame() {
+  FakeUartInterface fakeUartInterface;
+  TestableDataLinkLayer dataLinkLayer(&fakeUartInterface);
+
+  Kamstrup303WA02::DataLinkLayer::LongFrame long_frame {
+    .l = 6,
+    .c = 0x08,
+    .a = 0x54,
+    .ci = 0x72,
+    .check_sum = 0x00,
+    .user_data = new uint8_t[3] { 0x66, 0x77, 0x88 }
+  };
+  const uint8_t actual_checksum = dataLinkLayer.call_calculate_checksum(&long_frame);
+  delete[] long_frame.user_data;
+  TEST_ASSERT_EQUAL(0x33, actual_checksum);
+}
+
 typedef struct FakeUartInterfaceTaskArgs {
   FakeUartInterface* uart_interface;
   const uint8_t respond_to_nth_write;
@@ -536,6 +553,7 @@ void test_data_link_layer_req_ud2_different_l_fields(void) {
 int runUnityTests(void) {
   UNITY_BEGIN();
   RUN_TEST(test_data_link_layer_calculate_checksum);
+  RUN_TEST(test_data_link_layer_calculate_checksum_with_long_frame);
   RUN_TEST(test_data_link_layer_try_send_short_frame_reply_to_first_request);
   RUN_TEST(test_data_link_layer_try_send_short_frame_reply_to_second_request);
   RUN_TEST(test_data_link_layer_snd_nke_correct_response);

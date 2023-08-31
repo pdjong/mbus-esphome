@@ -27,7 +27,7 @@ class Kamstrup303WA02 {
           uint8_t c;
           uint8_t a;
           uint8_t ci;
-          // uint8_t check_sum;
+          uint8_t check_sum;
           uint8_t* user_data;
         } LongFrame;
         DataLinkLayer(UartInterface* uart_interface) : uart_interface_(uart_interface) {}
@@ -39,6 +39,7 @@ class Kamstrup303WA02 {
         void flush_rx_buffer();
         void send_short_frame(const uint8_t c, const uint8_t a);
         bool wait_for_incoming_data();
+        uint8_t calculate_checksum(const LongFrame* long_frame) const;
         uint8_t calculate_checksum(const uint8_t* data, size_t length) const;
         
         UartInterface* uart_interface_;

@@ -83,6 +83,10 @@ class TestableDataLinkLayer : public esphome::heatmeter_mbus::Kamstrup303WA02::D
       return this->calculate_checksum(data, length);
     }
 
+    uint8_t call_calculate_checksum(const LongFrame* long_frame) {
+      return this->calculate_checksum(long_frame);
+    }
+
     bool get_next_req_ud2_fcb() {
       return this->next_req_ud2_fcb_;
     }

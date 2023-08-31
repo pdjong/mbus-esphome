@@ -14,7 +14,10 @@ bool Kamstrup303WA02::DataLinkLayer::req_ud2(const uint8_t address, LongFrame* r
   const uint8_t c = (1 << C_FIELD_BIT_DIRECTION) | (fcb << C_FIELD_BIT_FCB) | (1 << C_FIELD_BIT_FCV) | C_FIELD_FUNCTION_REQ_UD2;
   bool received_response_to_request = this->try_send_short_frame(c, address);
   if (received_response_to_request) {
-    success = this->parse_long_frame_response(response_frame);
+    const bool received_sane_response = this->parse_long_frame_response(response_frame);
+    if (received_sane_response && response_frame->a == address) {
+      success = true;
+    }
   }
 
   if (success) {
@@ -24,8 +27,10 @@ bool Kamstrup303WA02::DataLinkLayer::req_ud2(const uint8_t address, LongFrame* r
 }
 
 bool Kamstrup303WA02::DataLinkLayer::parse_long_frame_response(Kamstrup303WA02::DataLinkLayer::LongFrame* long_frame) {
+  long_frame->user_data = nullptr;
 
   uint8_t current_byte { 0 };
+
   // Check start byte
   if (!this->read_next_byte(&current_byte) || (current_byte != START_BYTE_CONTROL_AND_LONG_FRAME)) {
     this->flush_rx_buffer();
@@ -56,7 +61,35 @@ bool Kamstrup303WA02::DataLinkLayer::parse_long_frame_response(Kamstrup303WA02::
     return false;
   }
 
-  // TODO: A, CI, user_data
+  // Read A field
+  if (!this->read_next_byte(&long_frame->a)) {
+    this->flush_rx_buffer();
+    return false;
+  }
+
+  // Read CI field
+  if (!this->read_next_byte(&long_frame->ci)) {
+    this->flush_rx_buffer();
+    return false;
+  }
+
+  // Read user data
+  // Expected amount of user data: L - 3 (3 for C, A, CI)
+  const uint8_t user_data_len = long_frame->l - 3;
+  long_frame->user_data = new uint8_t[user_data_len];
+  for (uint8_t i { 0 }; i < user_data_len; ++i) {
+    if (!this->read_next_byte(&current_byte)) {
+      this->flush_rx_buffer();
+      return false;
+    }
+    long_frame->user_data[i] = current_byte;
+  }
+
+  // Check sum
+  if (!this->read_next_byte(&long_frame->check_sum)) {
+    this->flush_rx_buffer();
+    return false;
+  }
   return true;
 }
 
@@ -150,6 +183,21 @@ bool Kamstrup303WA02::DataLinkLayer::wait_for_incoming_data() {
     ESP_LOGE(TAG, "waitForIncomingData - exit - No data received");
   }
   return dataReceived;
+}
+
+uint8_t Kamstrup303WA02::DataLinkLayer::calculate_checksum(const LongFrame* long_frame) const {
+  uint8_t *checksum_data = new uint8_t[long_frame->l + 3];
+  checksum_data[0] = long_frame->c;
+  checksum_data[1] = long_frame->a;
+  checksum_data[2] = long_frame->ci;
+  const uint8_t user_data_len = long_frame->l - 3;
+  for (uint8_t i = 0; i < user_data_len; ++i) {
+    // BUG! should be i + 3
+    checksum_data[i + 3] = long_frame->user_data[i];
+  }
+  uint8_t checksum = this->calculate_checksum(checksum_data, user_data_len + 3);
+  delete[] checksum_data;
+  return checksum;
 }
 
 uint8_t Kamstrup303WA02::DataLinkLayer::calculate_checksum(const uint8_t* data, size_t length) const {
