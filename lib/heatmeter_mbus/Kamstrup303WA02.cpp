@@ -186,17 +186,11 @@ bool Kamstrup303WA02::DataLinkLayer::wait_for_incoming_data() {
 }
 
 uint8_t Kamstrup303WA02::DataLinkLayer::calculate_checksum(const LongFrame* long_frame) const {
-  uint8_t *checksum_data = new uint8_t[long_frame->l + 3];
-  checksum_data[0] = long_frame->c;
-  checksum_data[1] = long_frame->a;
-  checksum_data[2] = long_frame->ci;
   const uint8_t user_data_len = long_frame->l - 3;
-  for (uint8_t i = 0; i < user_data_len; ++i) {
-    // BUG! should be i + 3
-    checksum_data[i + 3] = long_frame->user_data[i];
-  }
-  uint8_t checksum = this->calculate_checksum(checksum_data, user_data_len + 3);
-  delete[] checksum_data;
+  uint8_t checksum = this->calculate_checksum(long_frame->user_data, user_data_len);
+  checksum += long_frame->c;
+  checksum += long_frame->a;
+  checksum += long_frame->ci;
   return checksum;
 }
 
