@@ -48,6 +48,7 @@ bool Kamstrup303WA02::DataLinkLayer::parse_long_frame_response(Kamstrup303WA02::
     this->flush_rx_buffer();
     return false;
   }
+  long_frame->l = first_l_field;
 
   // Check 2nd start byte
   if (!this->read_next_byte(&current_byte) || (current_byte != START_BYTE_CONTROL_AND_LONG_FRAME)) {
@@ -85,11 +86,21 @@ bool Kamstrup303WA02::DataLinkLayer::parse_long_frame_response(Kamstrup303WA02::
     long_frame->user_data[i] = current_byte;
   }
 
-  // Check sum
-  if (!this->read_next_byte(&long_frame->check_sum)) {
+  // Calculate, read and check the check sum
+  const uint8_t calculated_check_sum = this->calculate_checksum(long_frame);
+  if (!this->read_next_byte(&long_frame->check_sum) || (long_frame->check_sum != calculated_check_sum)) {
     this->flush_rx_buffer();
     return false;
   }
+
+  // Check stop byte
+  if (!this->read_next_byte(&current_byte) || (STOP_BYTE != current_byte)) {
+    this->flush_rx_buffer();
+    return false;
+  }
+
+  // Flip the FCB bit to use for next REQ_UD2 message (see 5.5)
+  this->next_req_ud2_fcb_ = !this->next_req_ud2_fcb_;
   return true;
 }
 
