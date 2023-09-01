@@ -16,3 +16,4 @@ copy %SrcDir%\Kamstrup303WA02.cpp %customComponentsTargetDir%
 copy %SrcDir%\Kamstrup303WA02.h %customComponentsTargetDir%
 copy %SrcDir%\Pwm.cpp %customComponentsTargetDir%
 copy %SrcDir%\Pwm.h %customComponentsTargetDir%
+copy %SrcDir%\sensor.py %customComponentsTargetDir%

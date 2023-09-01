@@ -7,19 +7,178 @@
 #endif // UNIT_TEST
 
 namespace esphome {
-namespace heatmeter_mbus {
+namespace warmtemetermbus {
 
 class UartInterface {
   public:
     virtual bool read_byte(uint8_t* data) = 0;
     virtual bool read_array(uint8_t* data, size_t len) = 0;
-    virtual bool write_array(const uint8_t* data, size_t len) = 0;
+    virtual void write_array(const uint8_t* data, size_t len) = 0;
     virtual int available() const = 0;
     virtual void flush() = 0;
 };
 
+class EspArduinoUartInterface : public UartInterface {
+  public:
+    EspArduinoUartInterface(uart::UARTDevice* uart_device) : uart_device_(uart_device) {}
+
+    virtual bool read_byte(uint8_t* data) {
+      return this->uart_device_->read_byte(data);
+    }
+
+    virtual bool read_array(uint8_t* data, size_t len) {
+      return this->uart_device_->read_array(data, len);
+    }
+
+    virtual void write_array(const uint8_t* data, size_t len) {
+      this->uart_device_->write_array(data, len);
+    }
+
+    virtual int available() const {
+      return this->uart_device_->available();
+    }
+
+    virtual void flush() {
+      this->uart_device_->flush();
+    }
+  
+  protected:
+    uart::UARTDevice* uart_device_;
+};
+
 class Kamstrup303WA02 {
   public:
+    typedef struct VariableDataHeader {
+      uint32_t identNr;
+      uint16_t manufacturer;
+      uint8_t version;
+      uint8_t medium;
+      uint8_t accessNr;
+      uint8_t status;
+      uint16_t signature;
+    } VariableDataHeader;
+
+    typedef struct VariableDataRecord {
+      unsigned function : 2;
+      unsigned dataType : 4;
+      unsigned long long storageNumber : 41;
+      unsigned long tariff : 20;
+      unsigned subUnit : 10;
+      unsigned unitAndMultiplier : 7;
+      uint8_t data[8];
+      uint8_t dataLength;
+    } VariableDataRecord;
+
+    typedef enum EnergyUnit {
+        Wh,
+        J
+    } EnergyUnit;
+
+    typedef enum PowerUnit {
+        W,
+        JperH
+    } PowerUnit;
+
+    typedef enum DurationUnit {
+      seconds = 0x0,
+      minutes = 0x1,
+      hours = 0x2,
+      days = 0x3
+    } DurationUnit;
+
+    typedef enum VolumeFlowUnit {
+        m3PerHour,
+        m3PerMinute,
+        m3PerSecond
+    } VolumeFlowUnit;
+        
+    typedef struct EnergyValue {
+        uint32_t value;
+        EnergyUnit unit;
+        int8_t tenPower;
+    } EnergyValue;
+
+    typedef struct VolumeValue {
+        uint32_t value;
+        // No unit required; always m3
+        int8_t tenPower;
+    } VolumeValue;
+
+    typedef struct EnergyE8E9Value {
+        uint32_t value;
+        // No unit required; always cubic m * deg C
+        int8_t tenPower;
+    } EnergyE8E9Value;
+
+    typedef struct DurationValue {
+        uint32_t value;
+        DurationUnit unit;
+        // No multiplier!
+    } DurationValue;
+
+    typedef struct TemperatureValue {
+        int16_t value;
+        // No unit required; always deg C
+        int8_t tenPower;
+    } TemperatureValue;
+
+    typedef struct PowerValue {
+        uint16_t value;
+        PowerUnit unit;
+        int8_t tenPower;
+    } PowerValue;
+
+    typedef struct VolumeFlowValue {
+        uint16_t value;
+        VolumeFlowUnit unit;
+        int8_t tenPower;
+    } VolumeFlowValue;
+
+    typedef struct InfoBitsValue {
+        unsigned noVoltageSupply : 1;
+        unsigned lowBatteryLevel : 1;
+        unsigned notUsed1 : 1;
+        unsigned t1AboveRangeOrDisconnected : 1;
+        unsigned t2AboveRangeOrDisconnected : 1;
+        unsigned t1BelowRangeOrShirtCircuited : 1;
+        unsigned t2BelowRangeOrShirtCircuited : 1;
+        unsigned invalidTempDifference : 1;
+        unsigned v1Air : 1;
+        unsigned v1WrongFlowDirection : 1;
+        unsigned notUsed2 : 1;
+        unsigned v1GreaterThanQsMoreThanHour : 1;
+    } InfoBitsValue;
+
+    typedef struct DateValue {
+        uint8_t day;
+        uint8_t month;
+        uint8_t year;
+    } DateValue;
+
+    typedef struct MeterData {
+      EnergyValue heatEnergyE1;
+      VolumeValue volumeV1;
+      EnergyE8E9Value energyE8;
+      EnergyE8E9Value energyE9;
+      DurationValue operatingHours;
+      DurationValue errorHourCounter;
+      TemperatureValue t1Actual;
+      TemperatureValue t2Actual;
+      TemperatureValue diffT1T2;
+      PowerValue powerE1OverE3Actual;
+      PowerValue powerMaxMonth;
+      VolumeFlowValue flowV1Actual;
+      VolumeFlowValue flowV1MaxMonth;
+      InfoBitsValue infoBits;
+      EnergyValue heatEnergyE1Old;
+      VolumeValue volumeV1Old;
+      EnergyE8E9Value energyE8Old;
+      EnergyE8E9Value energyE9Old;
+      PowerValue powerMaxYear;
+      VolumeFlowValue flowV1MaxYear;
+      DateValue dateTimeLogged;
+    } MeterData;
+
     class DataLinkLayer {
       public:
         typedef struct LongFrame {
@@ -60,6 +219,18 @@ class Kamstrup303WA02 {
         bool read_next_byte(uint8_t* received_byte);
     };
 
+    Kamstrup303WA02(uart::UARTDevice* uart_device) {
+      EspArduinoUartInterface *uart_interface = new EspArduinoUartInterface(uart_device);
+      this->data_link_layer_ = new DataLinkLayer(uart_interface);
+    }
+
+    bool readData(MeterData * const data);
+
+  private:
+    DataLinkLayer* data_link_layer_;
+
+    void readDataRecord(VariableDataRecord * const dataRecord, const DataLinkLayer::LongFrame * const userData, uint16_t * const startOfDataRecordIdx);
+    void copyDataToTargetBuffer(VariableDataRecord* dataRecord, void* targetBuffer);
 };
 
 // class Kamstrup303WA02 {
@@ -255,7 +426,7 @@ class Kamstrup303WA02 {
 //   void copyDataToTargetBuffer(VariableDataRecord* dataRecord, void* targetBuffer);
 // };
 
-} //namespace heatmeter_mbus
+} //namespace warmtemetermbus
 } //namespace esphome
 
 #endif // KAMSTRUP303WA02_H_
