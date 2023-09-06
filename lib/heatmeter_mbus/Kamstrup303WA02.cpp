@@ -227,8 +227,8 @@ uint8_t Kamstrup303WA02::DataLinkLayer::calculate_checksum(const uint8_t* data, 
   return checksum;
 }
 
-bool Kamstrup303WA02::readData(Kamstrup303WA02::MeterData * const data) {
-  ESP_LOGD(TAG, "readData - enter");
+bool Kamstrup303WA02::read_data(Kamstrup303WA02::MeterData * const data) {
+  ESP_LOGD(TAG, "read_data - enter");
   bool isSuccessful {false};
 	DataLinkLayer::LongFrame telegramData;
 	if (!this->data_link_layer_->req_ud2(0x01, &telegramData)) {
@@ -488,7 +488,7 @@ bool Kamstrup303WA02::readData(Kamstrup303WA02::MeterData * const data) {
       ESP_LOGW(TAG, "Unknown response to REQ_UD2");
 			break;
 	}
-  ESP_LOGD(TAG, "readData - exit");
+  ESP_LOGD(TAG, "read_data - exit");
 	return isSuccessful;	
 }
 

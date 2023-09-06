@@ -225,7 +225,7 @@ class Kamstrup303WA02 {
       this->data_link_layer_ = new DataLinkLayer(uart_interface);
     }
 
-    bool readData(MeterData * const data);
+    bool read_data(MeterData * const data);
 
   private:
     DataLinkLayer* data_link_layer_;
