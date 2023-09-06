@@ -7,10 +7,10 @@ esp32:
   framework:
     type: arduino
 
-external_components:
-  - source:
-      type: local
-      path: custom_components
+# external_components:
+#   - source:
+#       type: local
+#       path: lib/heatmeter_mbus
     
 # Enable logging
 logger:
@@ -29,8 +29,12 @@ ota:
   password: "e5264b2500ef5b812b82d4342c5a60f6"
 
 wifi:
-  ssid: !secret wifi_ssid
-  password: !secret wifi_password
+# Next tow lines for building locally with ESPHome
+  ssid: Unicorn
+  password: #password...
+# Next two lines for building on Home Assistant OS, ESPHome
+  ssid: #!secret wifi_ssid
+  password: #!secret wifi_password
 
   # Enable fallback hotspot (captive portal) in case wifi connection fails
   ap:
