@@ -203,6 +203,7 @@ class Kamstrup303WA02 {
         
         UartInterface* uart_interface_;
         bool next_req_ud2_fcb_ { true };
+        bool meter_is_initialized_ { false };
 
       private:
         const uint8_t START_BYTE_SINGLE_CHARACTER = 0xE5;

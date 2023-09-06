@@ -14,6 +14,14 @@ static const char * TAG {"Kamstrup303WA02"};
 bool Kamstrup303WA02::DataLinkLayer::req_ud2(const uint8_t address, LongFrame* response_frame) {
   bool success { false };
 
+  if (!this->meter_is_initialized_) {
+    if (this->snd_nke(address)) {
+      this->meter_is_initialized_ = true;
+    } else {
+      ESP_LOGI(TAG, "Could not initialize meter");
+      return false;
+    }
+  }
   const uint8_t fcb = this->next_req_ud2_fcb_ ? 1u : 0u;
   const uint8_t c = (1 << C_FIELD_BIT_DIRECTION) | (fcb << C_FIELD_BIT_FCB) | (1 << C_FIELD_BIT_FCV) | C_FIELD_FUNCTION_REQ_UD2;
   bool received_response_to_request = this->try_send_short_frame(c, address);
