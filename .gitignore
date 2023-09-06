@@ -40,3 +40,4 @@
 
 # ESPHome
 .esphome
+__pycache__
