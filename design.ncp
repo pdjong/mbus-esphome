@@ -102,6 +102,15 @@ Later, the read value object has a unit and value, and the MbusSensor can have a
         <Location left="457" top="714" />
         <Size width="353" height="206" />
       </Entity>
+      <Entity type="Class">
+        <Name>DataBlockReader</Name>
+        <Access>Public</Access>
+        <Location left="1373" top="714" />
+        <Size width="302" height="94" />
+        <Collapsed>False</Collapsed>
+        <Member type="Method">public void read_data_blocks(LongFrame plong_frame)</Member>
+        <Modifier>None</Modifier>
+      </Entity>
     </Entities>
     <Relationships>
       <Relationship type="Association" first="0" second="1">
@@ -173,6 +182,14 @@ Later, the read value object has a unit and value, and the MbusSensor can have a
         <EndOrientation>Horizontal</EndOrientation>
         <Direction>Unidirectional</Direction>
         <AssociationType>Aggregation</AssociationType>
+      </Relationship>
+      <Relationship type="Association" first="6" second="10">
+        <Label>
+        </Label>
+        <StartOrientation>Horizontal</StartOrientation>
+        <EndOrientation>Horizontal</EndOrientation>
+        <Direction>Unidirectional</Direction>
+        <AssociationType>Association</AssociationType>
       </Relationship>
     </Relationships>
   </ProjectItem>
