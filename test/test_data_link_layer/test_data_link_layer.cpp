@@ -377,6 +377,76 @@ void test_data_link_layer_req_ud2_check_sending_correct_data(void) {
   TEST_ASSERT_EQUAL(0x16, actual_written_array.data[4]);
 }
 
+void test_data_link_layer_req_ud2_check_snd_nke_to_init(void) {
+  // Arrange
+  FakeUartInterface uart_interface;
+  const uint8_t fake_data[] = { 0xE5, 0x68, 0x06, 0x06, 0x68, 0x08, 0xB2, 0x72, 0x03, 0x02, 0x01, 0x32, 0x16 };
+  FakeUartInterfaceTaskArgs args = { 
+    .uart_interface = &uart_interface,
+    .respond_to_nth_write = 1,
+    .delay_in_ms  = 5,
+    .data_to_return = fake_data,
+    .len_of_data_to_return = 13
+  };
+  xTaskCreatePinnedToCore(fake_uart_interface_task,
+                    "fake_uart_interface_task1", // name
+                    30000,                      // stack size (in words)
+                    &args,                      // input params
+                    1,                          // priority
+                    nullptr,                    // Handle, not needed
+                    0                           // core
+  );
+
+  const uint8_t fake_data2[] = { 0x68, 0x06, 0x06, 0x68, 0x08, 0xB2, 0x72, 0x03, 0x02, 0x01, 0x32, 0x16 };
+  FakeUartInterfaceTaskArgs args2 = { 
+    .uart_interface = &uart_interface,
+    .respond_to_nth_write = 2,
+    .delay_in_ms  = 200,
+    .data_to_return = fake_data2,
+    .len_of_data_to_return = 12
+  };
+  xTaskCreatePinnedToCore(fake_uart_interface_task,
+                    "fake_uart_interface_task2", // name
+                    30000,                      // stack size (in words)
+                    &args2,                      // input params
+                    1,                          // priority
+                    nullptr,                    // Handle, not needed
+                    0                           // core
+  );
+
+  TestableDataLinkLayer dataLinkLayer(&uart_interface);
+  dataLinkLayer.set_meter_is_initialized(false);
+
+  // Act
+  const uint8_t a = 0xB2;
+  Kamstrup303WA02::DataLinkLayer::LongFrame response_frame;
+  const bool actual_return_value = dataLinkLayer.req_ud2(a, &response_frame);
+
+  // Assert
+  // Check the sent data: should be a short frame!
+  // Start:     0x10
+  // C:         0x7B
+  // A:         0xB2
+  // Check sum: 0x2D
+  // Stop:      0x16
+  TEST_ASSERT_EQUAL(2, uart_interface.written_arrays_.size());
+  FakeUartInterface::WrittenArray actual_written_array = uart_interface.written_arrays_[0];
+  TEST_ASSERT_EQUAL(5, actual_written_array.len);
+  TEST_ASSERT_EQUAL(0x10, actual_written_array.data[0]);
+  TEST_ASSERT_EQUAL(0x40, actual_written_array.data[1]);
+  TEST_ASSERT_EQUAL(0xB2, actual_written_array.data[2]);
+  TEST_ASSERT_EQUAL(0xF2, actual_written_array.data[3]);
+  TEST_ASSERT_EQUAL(0x16, actual_written_array.data[4]);
+
+  actual_written_array = uart_interface.written_arrays_[1];
+  TEST_ASSERT_EQUAL(5, actual_written_array.len);
+  TEST_ASSERT_EQUAL(0x10, actual_written_array.data[0]);
+  TEST_ASSERT_EQUAL(0x7B, actual_written_array.data[1]);
+  TEST_ASSERT_EQUAL(0xB2, actual_written_array.data[2]);
+  TEST_ASSERT_EQUAL(0x2D, actual_written_array.data[3]);
+  TEST_ASSERT_EQUAL(0x16, actual_written_array.data[4]);
+}
+
 void test_data_link_layer_req_ud2_correct_response(void) {
   // Arrange
   FakeUartInterface uart_interface;
@@ -570,6 +640,7 @@ int runUnityTests(void) {
   RUN_TEST(test_data_link_layer_snd_nke_correct_response);
   RUN_TEST(test_data_link_layer_snd_nke_incorrect_response);
   RUN_TEST(test_data_link_layer_req_ud2_check_sending_correct_data);
+  RUN_TEST(test_data_link_layer_req_ud2_check_snd_nke_to_init);
   RUN_TEST(test_data_link_layer_req_ud2_correct_response);
   RUN_TEST(test_data_link_layer_req_ud2_no_response);
   RUN_TEST(test_data_link_layer_req_ud2_incorrect_a_field);
