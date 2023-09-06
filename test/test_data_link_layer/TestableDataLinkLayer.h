@@ -90,4 +90,8 @@ class TestableDataLinkLayer : public esphome::warmtemetermbus::Kamstrup303WA02::
     bool get_next_req_ud2_fcb() {
       return this->next_req_ud2_fcb_;
     }
+
+    void set_meter_is_initialized(bool is_initialized) {
+      this->meter_is_initialized_ = is_initialized;
+    }
 };

@@ -119,7 +119,8 @@ void test_data_link_layer_try_send_short_frame_reply_to_first_request(void) {
   );
 
   TestableDataLinkLayer dataLinkLayer(&uart_interface);
-
+  dataLinkLayer.set_meter_is_initialized(true);
+  
   // Act
   const uint8_t c = 0x40;
   const uint8_t a = 0x54;
@@ -179,6 +180,7 @@ void test_data_link_layer_try_send_short_frame_reply_to_second_request(void) {
   );
 
   TestableDataLinkLayer dataLinkLayer(&uart_interface);
+  dataLinkLayer.set_meter_is_initialized(true);
 
   // Act
   const uint8_t c = 0x40;
@@ -235,6 +237,7 @@ void test_data_link_layer_snd_nke_correct_response(void) {
   );
 
   TestableDataLinkLayer dataLinkLayer(&uart_interface);
+  dataLinkLayer.set_meter_is_initialized(true);
 
   // Act
   const uint8_t a = 0xB2;
@@ -293,6 +296,7 @@ void test_data_link_layer_snd_nke_incorrect_response(void) {
   );
 
   TestableDataLinkLayer dataLinkLayer(&uart_interface);
+  dataLinkLayer.set_meter_is_initialized(true);
 
   // Act
   const uint8_t a = 0xB2;
@@ -349,6 +353,7 @@ void test_data_link_layer_req_ud2_check_sending_correct_data(void) {
   );
 
   TestableDataLinkLayer dataLinkLayer(&uart_interface);
+  dataLinkLayer.set_meter_is_initialized(true);
 
   // Act
   const uint8_t a = 0xB2;
@@ -393,6 +398,7 @@ void test_data_link_layer_req_ud2_correct_response(void) {
   );
 
   TestableDataLinkLayer dataLinkLayer(&uart_interface);
+  dataLinkLayer.set_meter_is_initialized(true);
 
   // Act
   const uint8_t a = 0xB2;
@@ -416,6 +422,7 @@ void test_data_link_layer_req_ud2_no_response(void) {
   // Arrange
   FakeUartInterface uart_interface;
   TestableDataLinkLayer dataLinkLayer(&uart_interface);
+  dataLinkLayer.set_meter_is_initialized(true);
 
   // Act
   const uint8_t a = 0xB2;
@@ -447,6 +454,7 @@ void test_data_link_layer_req_ud2_incorrect_a_field(void) {
   );
 
   TestableDataLinkLayer dataLinkLayer(&uart_interface);
+  dataLinkLayer.set_meter_is_initialized(true);
 
   // Act
   const uint8_t a = 0xB2;
@@ -478,6 +486,7 @@ void test_data_link_layer_req_ud2_incorrect_function(void) {
   );
 
   TestableDataLinkLayer dataLinkLayer(&uart_interface);
+  dataLinkLayer.set_meter_is_initialized(true);
 
   // Act
   const uint8_t a = 0xB2;
@@ -509,6 +518,7 @@ void test_data_link_layer_req_ud2_incorrect_check_sum(void) {
   );
 
   TestableDataLinkLayer dataLinkLayer(&uart_interface);
+  dataLinkLayer.set_meter_is_initialized(true);
 
   // Act
   const uint8_t a = 0xB2;
@@ -540,6 +550,7 @@ void test_data_link_layer_req_ud2_different_l_fields(void) {
   );
 
   TestableDataLinkLayer dataLinkLayer(&uart_interface);
+  dataLinkLayer.set_meter_is_initialized(true);
 
   // Act
   const uint8_t a = 0xB2;
