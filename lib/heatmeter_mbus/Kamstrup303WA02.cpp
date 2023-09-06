@@ -227,6 +227,10 @@ uint8_t Kamstrup303WA02::DataLinkLayer::calculate_checksum(const uint8_t* data, 
   return checksum;
 }
 
+Kamstrup303WA02::Kamstrup303WA02(UartInterface* uart_interface) {
+  this->data_link_layer_ = new DataLinkLayer(uart_interface);
+}
+
 bool Kamstrup303WA02::read_data(Kamstrup303WA02::MeterData * const data) {
   ESP_LOGD(TAG, "read_data - enter");
   bool isSuccessful {false};

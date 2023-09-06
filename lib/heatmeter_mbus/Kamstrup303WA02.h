@@ -6,45 +6,11 @@
 #include "esphome/components/uart/uart.h"
 #endif // UNIT_TEST
 
+#include <vector>
+#include "UartInterface.h"
+
 namespace esphome {
 namespace warmtemetermbus {
-
-class UartInterface {
-  public:
-    virtual bool read_byte(uint8_t* data) = 0;
-    virtual bool read_array(uint8_t* data, size_t len) = 0;
-    virtual void write_array(const uint8_t* data, size_t len) = 0;
-    virtual int available() const = 0;
-    virtual void flush() = 0;
-};
-
-class EspArduinoUartInterface : public UartInterface {
-  public:
-    EspArduinoUartInterface(uart::UARTDevice* uart_device) : uart_device_(uart_device) {}
-
-    virtual bool read_byte(uint8_t* data) {
-      return this->uart_device_->read_byte(data);
-    }
-
-    virtual bool read_array(uint8_t* data, size_t len) {
-      return this->uart_device_->read_array(data, len);
-    }
-
-    virtual void write_array(const uint8_t* data, size_t len) {
-      this->uart_device_->write_array(data, len);
-    }
-
-    virtual int available() const {
-      return this->uart_device_->available();
-    }
-
-    virtual void flush() {
-      this->uart_device_->flush();
-    }
-  
-  protected:
-    uart::UARTDevice* uart_device_;
-};
 
 class Kamstrup303WA02 {
   public:
@@ -155,6 +121,13 @@ class Kamstrup303WA02 {
         uint8_t year;
     } DateValue;
 
+    typedef enum Function : uint8_t {
+      instantaneous = 0,
+      maximum = 1,
+      minimum = 2,
+      during_error_state = 3
+    } Function;
+
     typedef struct MeterData {
       EnergyValue heatEnergyE1;
       VolumeValue volumeV1;
@@ -179,6 +152,46 @@ class Kamstrup303WA02 {
       DateValue dateTimeLogged;
     } MeterData;
 
+    // typedef enum Unit {
+    //   Wh,
+    //   J,
+    //   cubic_meter,
+    //   kg,
+    //   seconds,
+    //   minutes,
+    //   hours,
+    //   days,
+    //   W,
+    //   J_per_hour,
+    //   cubic_meter_per_hour,
+    //   cubic_meter_per_minute,
+    //   cubic_meter_per_second,
+    //   kg_per_hour,
+    //   degrees_celsius,
+    //   K,
+    //   bar,
+    //   date,
+    //   time_and_date,
+    //   manufacturer_specific,
+    //   dimensionless
+    // } Unit;
+
+    typedef struct DataBlock {
+      Function function;
+      uint64_t storage_number;
+      uint32_t tariff;
+      size_t data_length;
+      uint8_t* binary_data;
+      uint8_t index;
+      int8_t ten_power;
+      int8_t unit;
+      bool is_manufacturer_specific;
+    } DataBlock;
+
+    typedef struct MbusMeterData {
+      std::vector<DataBlock> data_blocks;
+    } MbusMeterData;
+
     class DataLinkLayer {
       public:
         typedef struct LongFrame {
@@ -189,6 +202,7 @@ class Kamstrup303WA02 {
           uint8_t check_sum;
           uint8_t* user_data;
         } LongFrame;
+        
         DataLinkLayer(UartInterface* uart_interface) : uart_interface_(uart_interface) {}
         bool req_ud2(const uint8_t address, LongFrame* response_frame);
         bool snd_nke(const uint8_t address);
@@ -220,12 +234,16 @@ class Kamstrup303WA02 {
         bool read_next_byte(uint8_t* received_byte);
     };
 
-    Kamstrup303WA02(uart::UARTDevice* uart_device) {
-      EspArduinoUartInterface *uart_interface = new EspArduinoUartInterface(uart_device);
-      this->data_link_layer_ = new DataLinkLayer(uart_interface);
-    }
+    // Kamstrup303WA02(uart::UARTDevice* uart_device) {
+    //   EspArduinoUartInterface *uart_interface = new EspArduinoUartInterface(uart_device);
+    //   this->data_link_layer_ = new DataLinkLayer(uart_interface);
+    // }
+    Kamstrup303WA02(UartInterface* uart_interface);
 
     bool read_data(MeterData * const data);
+
+  protected:
+    void read_next_data_block(DataBlock* data_block);
 
   private:
     DataLinkLayer* data_link_layer_;

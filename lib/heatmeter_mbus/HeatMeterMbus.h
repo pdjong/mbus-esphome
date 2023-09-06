@@ -5,6 +5,7 @@
 #include "esphome/components/binary_sensor/binary_sensor.h"
 #include "esphome/components/uart/uart.h"
 #include "Kamstrup303WA02.h"
+#include "UartInterface.h"
 #include "Pwm.h"
 
 namespace esphome {
@@ -26,7 +27,7 @@ namespace warmtemetermbus {
 
 class HeatMeterMbus : public Component, public uart::UARTDevice {
   public:  
-    HeatMeterMbus() : kamstrup(this) {}
+    HeatMeterMbus();
     
     HEATMETERMBUS_METER_SENSOR(heat_energy_e1)
     HEATMETERMBUS_METER_SENSOR(volume_v1)
@@ -72,7 +73,7 @@ class HeatMeterMbus : public Component, public uart::UARTDevice {
 
   private:
     Pwm pwm;
-    Kamstrup303WA02 kamstrup;
+    Kamstrup303WA02* kamstrup;
     bool updateRequested { false };
     bool mbusEnabled { true };
 

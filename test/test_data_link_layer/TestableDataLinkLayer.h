@@ -1,12 +1,13 @@
 #include <test_includes.h>
-#include <Kamstrup303WA02.h>
+#include <UartInterface.h>
 #include <vector>
 #include <queue>
+#include <Kamstrup303WA02.h>
 
 using std::vector;
 using std::queue;
 
-class FakeUartInterface : public esphome::heatmeter_mbus::UartInterface {
+class FakeUartInterface : public esphome::warmtemetermbus::UartInterface {
   public:
     typedef struct WrittenArray {
       const uint8_t* data;
@@ -36,7 +37,7 @@ class FakeUartInterface : public esphome::heatmeter_mbus::UartInterface {
       return true;
     }
 
-    virtual bool write_array(const uint8_t* data, size_t len) {
+    virtual void write_array(const uint8_t* data, size_t len) {
       uint8_t *copied_data = new uint8_t[len];
       for (size_t i = 0; i < len; ++i) {
         copied_data[i] = data[i];
@@ -44,7 +45,6 @@ class FakeUartInterface : public esphome::heatmeter_mbus::UartInterface {
       WrittenArray writtenArray = { .data = copied_data, .len = len };
       this->written_arrays_.push_back(writtenArray);
       ++(this->write_array_call_count_);
-      return true;
     }
 
     virtual int available() const {
@@ -71,9 +71,9 @@ class FakeUartInterface : public esphome::heatmeter_mbus::UartInterface {
     uint8_t write_array_call_count_ { 0 };
 };
 
-class TestableDataLinkLayer : public esphome::heatmeter_mbus::Kamstrup303WA02::DataLinkLayer {
+class TestableDataLinkLayer : public esphome::warmtemetermbus::Kamstrup303WA02::DataLinkLayer {
   public:
-    TestableDataLinkLayer(FakeUartInterface* uartInterface) : esphome::heatmeter_mbus::Kamstrup303WA02::DataLinkLayer(uartInterface) {}
+    TestableDataLinkLayer(FakeUartInterface* uartInterface) : esphome::warmtemetermbus::Kamstrup303WA02::DataLinkLayer(uartInterface) {}
 
     bool call_try_send_short_frame(const uint8_t c, const uint8_t a) {
       return this->try_send_short_frame(c, a);

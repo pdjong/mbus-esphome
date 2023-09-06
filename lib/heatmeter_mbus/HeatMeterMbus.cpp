@@ -1,9 +1,12 @@
+#ifndef UNIT_TEST
+
 #include "esphome/core/log.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <math.h>
 #include "HeatMeterMbus.h"
 #include "Kamstrup303WA02.h"
+#include "EspArduinoUartInterface.h"
 
 using namespace std; 
 
@@ -16,8 +19,14 @@ namespace esphome
     bool pwmInitialized { false };
     bool pwmEnabled { false };
 
+    HeatMeterMbus::HeatMeterMbus() {
+      EspArduinoUartInterface *uart_interface = new EspArduinoUartInterface(this);
+      this->kamstrup = new Kamstrup303WA02(uart_interface);
+    }
+
     void HeatMeterMbus::setup()
     {
+      ESP_LOGI(TAG, "setup()");
       if (ESP_OK != initializeAndEnablePwm(&pwm))
       {
         ESP_LOGE(TAG, "Error initializing and enabling PWM");
@@ -63,7 +72,6 @@ namespace esphome
     void HeatMeterMbus::read_mbus_task_loop(void* params)
     {
       HeatMeterMbus *heatMeterMbus = reinterpret_cast<HeatMeterMbus*>(params);
-      Kamstrup303WA02 &kamstrup(heatMeterMbus->kamstrup);
 
       while (true)
       {
@@ -77,7 +85,7 @@ namespace esphome
           // Let's request data, and wait for its results :-)
           Kamstrup303WA02::MeterData meterData;
           ESP_LOGI(TAG, "About to readData");
-          bool readSuccessful {kamstrup.readData(&meterData)};
+          bool readSuccessful {heatMeterMbus->kamstrup->read_data(&meterData)};
 
           if (readSuccessful)
           {
@@ -310,3 +318,5 @@ namespace esphome
     }
   } // namespace warmtemetermbus
 } // namespace esphome
+
+#endif // UNIT_TEST

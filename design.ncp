@@ -64,11 +64,12 @@
       <Entity type="Class">
         <Name>Kamstrup303WA02</Name>
         <Access>Public</Access>
-        <Location left="959" top="714" />
-        <Size width="192" height="111" />
+        <Location left="914" top="714" />
+        <Size width="289" height="128" />
         <Collapsed>False</Collapsed>
         <Member type="Method">public void sndNke()</Member>
         <Member type="Method">public bool readData(MeterData data)</Member>
+        <Member type="Method">public void read_next_data_block(DataBlock pdata_block)</Member>
         <Modifier>None</Modifier>
       </Entity>
       <Entity type="Class">
@@ -131,8 +132,6 @@ Later, the read value object has a unit and value, and the MbusSensor can have a
         <EndOrientation>Vertical</EndOrientation>
       </Relationship>
       <Relationship type="Association" first="4" second="0">
-        <Label>
-        </Label>
         <StartOrientation>Vertical</StartOrientation>
         <EndOrientation>Vertical</EndOrientation>
         <BendPoint relativeToStartShape="True">
@@ -143,8 +142,6 @@ Later, the read value object has a unit and value, and the MbusSensor can have a
         <AssociationType>Association</AssociationType>
       </Relationship>
       <Relationship type="Association" first="4" second="6">
-        <Label>
-        </Label>
         <StartOrientation>Vertical</StartOrientation>
         <EndOrientation>Vertical</EndOrientation>
         <BendPoint relativeToStartShape="True">
@@ -170,6 +167,8 @@ Later, the read value object has a unit and value, and the MbusSensor can have a
         <EndOrientation>Vertical</EndOrientation>
       </Relationship>
       <Relationship type="Association" first="4" second="7">
+        <Label>
+        </Label>
         <StartOrientation>Horizontal</StartOrientation>
         <EndOrientation>Horizontal</EndOrientation>
         <Direction>Unidirectional</Direction>
@@ -221,36 +220,44 @@ Later, the read value object has a unit and value, and the MbusSensor can have a
         <Name>ValueInformationBlock</Name>
         <Access>Public</Access>
         <Location left="855" top="378" />
-        <Size width="162" height="128" />
+        <Size width="162" height="111" />
         <Collapsed>False</Collapsed>
         <Member type="Property">public int Unit { get; set; }</Member>
         <Member type="Property">public int TenPower { get; set; }</Member>
-        <Member type="Property">public int Quantity { get; set; }</Member>
         <Modifier>None</Modifier>
       </Entity>
       <Entity type="Comment">
         <Text>Top: Representation of the binary data in the user data part of the telegram.</Text>
-        <Location left="1234" top="331" />
-        <Size width="160" height="75" />
+        <Location left="1236" top="333" />
+        <Size width="177" height="100" />
       </Entity>
       <Entity type="Class">
         <Name>DataBlock</Name>
         <Access>Public</Access>
-        <Location left="451" top="766" />
-        <Size width="190" height="162" />
+        <Location left="432" top="999" />
+        <Size width="232" height="213" />
         <Collapsed>False</Collapsed>
         <Member type="Property">public int Function { get; set; }</Member>
         <Member type="Property">public int StorageNumber { get; set; }</Member>
         <Member type="Property">public int Tariff { get; set; }</Member>
-        <Member type="Property">public uint64_t Data { get; set; }</Member>
+        <Member type="Property">public uint64_t BinaryData { get; set; }</Member>
         <Member type="Property">public int Index { get; set; }</Member>
+        <Member type="Property">public int TenPower { get; set; }</Member>
+        <Member type="Property">public int Unit { get; set; }</Member>
+        <Member type="Property">public bool IsManufacturerSpecific { get; set; }</Member>
+        <Modifier>None</Modifier>
+      </Entity>
+      <Entity type="Class">
+        <Name>MeterData</Name>
+        <Access>Public</Access>
+        <Location left="467" top="816" />
+        <Size width="162" height="77" />
+        <Collapsed>False</Collapsed>
         <Modifier>None</Modifier>
       </Entity>
     </Entities>
     <Relationships>
       <Relationship type="Association" first="0" second="1">
-        <Label>
-        </Label>
         <StartOrientation>Horizontal</StartOrientation>
         <EndOrientation>Horizontal</EndOrientation>
         <BendPoint relativeToStartShape="True">
@@ -262,8 +269,6 @@ Later, the read value object has a unit and value, and the MbusSensor can have a
         <EndMultiplicity>1</EndMultiplicity>
       </Relationship>
       <Relationship type="Association" first="0" second="2">
-        <Label>
-        </Label>
         <StartOrientation>Horizontal</StartOrientation>
         <EndOrientation>Horizontal</EndOrientation>
         <BendPoint relativeToStartShape="True">
@@ -275,8 +280,6 @@ Later, the read value object has a unit and value, and the MbusSensor can have a
         <EndMultiplicity>1</EndMultiplicity>
       </Relationship>
       <Relationship type="Association" first="1" second="3">
-        <Label>
-        </Label>
         <StartOrientation>Horizontal</StartOrientation>
         <EndOrientation>Horizontal</EndOrientation>
         <BendPoint relativeToStartShape="True">
@@ -291,8 +294,6 @@ Later, the read value object has a unit and value, and the MbusSensor can have a
         <AssociationType>Composition</AssociationType>
       </Relationship>
       <Relationship type="Association" first="1" second="4">
-        <Label>
-        </Label>
         <StartOrientation>Horizontal</StartOrientation>
         <EndOrientation>Horizontal</EndOrientation>
         <BendPoint relativeToStartShape="True">
@@ -301,6 +302,14 @@ Later, the read value object has a unit and value, and the MbusSensor can have a
         </BendPoint>
         <Direction>Unidirectional</Direction>
         <AssociationType>Composition</AssociationType>
+      </Relationship>
+      <Relationship type="Association" first="7" second="6">
+        <Label>data_blocks</Label>
+        <StartOrientation>Vertical</StartOrientation>
+        <EndOrientation>Vertical</EndOrientation>
+        <Direction>Unidirectional</Direction>
+        <AssociationType>Aggregation</AssociationType>
+        <EndMultiplicity>*</EndMultiplicity>
       </Relationship>
     </Relationships>
   </ProjectItem>
@@ -434,16 +443,12 @@ Later, the read value object has a unit and value, and the MbusSensor can have a
         <EndOrientation>Vertical</EndOrientation>
       </Relationship>
       <Relationship type="Association" first="7" second="1">
-        <Label>
-        </Label>
         <StartOrientation>Horizontal</StartOrientation>
         <EndOrientation>Horizontal</EndOrientation>
         <Direction>Unidirectional</Direction>
         <AssociationType>Association</AssociationType>
       </Relationship>
       <Relationship type="Association" first="0" second="6">
-        <Label>
-        </Label>
         <StartOrientation>Horizontal</StartOrientation>
         <EndOrientation>Horizontal</EndOrientation>
         <Direction>Unidirectional</Direction>

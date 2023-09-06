@@ -5,7 +5,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
-using namespace esphome::heatmeter_mbus;
+using namespace esphome::warmtemetermbus;
 
 void setUp(void) {}
 void tearDown(void) {}
