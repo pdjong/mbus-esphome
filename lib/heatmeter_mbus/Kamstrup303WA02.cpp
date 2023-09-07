@@ -11,224 +11,13 @@ namespace warmtemetermbus {
 
 static const char * TAG {"Kamstrup303WA02"};
 
-bool Kamstrup303WA02::DataLinkLayer::req_ud2(const uint8_t address, LongFrame* response_frame) {
-  bool success { false };
-
-  if (!this->meter_is_initialized_) {
-    if (this->snd_nke(address)) {
-      this->meter_is_initialized_ = true;
-    } else {
-      ESP_LOGI(TAG, "Could not initialize meter");
-      return false;
-    }
-  }
-  const uint8_t fcb = this->next_req_ud2_fcb_ ? 1u : 0u;
-  const uint8_t c = (1 << C_FIELD_BIT_DIRECTION) | (fcb << C_FIELD_BIT_FCB) | (1 << C_FIELD_BIT_FCV) | C_FIELD_FUNCTION_REQ_UD2;
-  bool received_response_to_request = this->try_send_short_frame(c, address);
-  if (received_response_to_request) {
-    const bool received_sane_response = this->parse_long_frame_response(response_frame);
-    if (received_sane_response && response_frame->a == address) {
-      success = true;
-    }
-  }
-
-  if (success) {
-    this->next_req_ud2_fcb_ = !this->next_req_ud2_fcb_;
-  }
-  return success;
-}
-
-bool Kamstrup303WA02::DataLinkLayer::parse_long_frame_response(Kamstrup303WA02::DataLinkLayer::LongFrame* long_frame) {
-  long_frame->user_data = nullptr;
-
-  uint8_t current_byte { 0 };
-
-  // Check start byte
-  if (!this->read_next_byte(&current_byte) || (current_byte != START_BYTE_CONTROL_AND_LONG_FRAME)) {
-    this->flush_rx_buffer();
-    return false;
-  }
-
-  // Check two identical L fields
-  uint8_t first_l_field { 0 };
-  uint8_t second_l_field { 0 };
-  if (!this->read_next_byte(&first_l_field) || !this->read_next_byte(&second_l_field)) {
-    this->flush_rx_buffer();
-    return false;
-  }
-  if (first_l_field != second_l_field) {
-    this->flush_rx_buffer();
-    return false;
-  }
-  long_frame->l = first_l_field;
-
-  // Check 2nd start byte
-  if (!this->read_next_byte(&current_byte) || (current_byte != START_BYTE_CONTROL_AND_LONG_FRAME)) {
-    this->flush_rx_buffer();
-    return false;
-  }
-  
-  // Check C field
-  if (!this->read_next_byte(&long_frame->c) || ((long_frame->c & 0x0F) != 0x08) || ((long_frame->c & 0xC0) != 0x00)) {
-    this->flush_rx_buffer();
-    return false;
-  }
-
-  // Read A field
-  if (!this->read_next_byte(&long_frame->a)) {
-    this->flush_rx_buffer();
-    return false;
-  }
-
-  // Read CI field
-  if (!this->read_next_byte(&long_frame->ci)) {
-    this->flush_rx_buffer();
-    return false;
-  }
-
-  // Read user data
-  // Expected amount of user data: L - 3 (3 for C, A, CI)
-  const uint8_t user_data_len = long_frame->l - 3;
-  long_frame->user_data = new uint8_t[user_data_len];
-  for (uint8_t i { 0 }; i < user_data_len; ++i) {
-    if (!this->read_next_byte(&current_byte)) {
-      this->flush_rx_buffer();
-      return false;
-    }
-    long_frame->user_data[i] = current_byte;
-  }
-
-  // Calculate, read and check the check sum
-  const uint8_t calculated_check_sum = this->calculate_checksum(long_frame);
-  if (!this->read_next_byte(&long_frame->check_sum) || (long_frame->check_sum != calculated_check_sum)) {
-    this->flush_rx_buffer();
-    return false;
-  }
-
-  // Check stop byte
-  if (!this->read_next_byte(&current_byte) || (STOP_BYTE != current_byte)) {
-    this->flush_rx_buffer();
-    return false;
-  }
-
-  // Flip the FCB bit to use for next REQ_UD2 message (see 5.5)
-  this->next_req_ud2_fcb_ = !this->next_req_ud2_fcb_;
-  return true;
-}
-
-bool Kamstrup303WA02::DataLinkLayer::read_next_byte(uint8_t* received_byte) {
-  const uint32_t time_before_starting_to_wait { millis() };
-	while (this->uart_interface_->available() == 0) {
-    delay(1);
-    if (millis() - time_before_starting_to_wait > 150) {
-      ESP_LOGE(TAG, "No data available after timeout");
-      return false;
-    }
-  }
-  this->uart_interface_->read_byte(received_byte);
-	return true;
-}
-
-bool Kamstrup303WA02::DataLinkLayer::snd_nke(const uint8_t address) {
-  bool success { false };
-
-  const uint8_t c = (1 << C_FIELD_BIT_DIRECTION) | (C_FIELD_FUNCTION_SND_NKE);
-  bool received_response_to_short_frame = try_send_short_frame(c, address);
-  if (received_response_to_short_frame) {
-    uint8_t received_byte { 0 };
-    this->uart_interface_->read_byte(&received_byte);
-    if (START_BYTE_SINGLE_CHARACTER == received_byte) {
-      success = true;
-      this->next_req_ud2_fcb_ = true;
-    } else {
-      ESP_LOGE(TAG, "Wrong answer to SND_NKE: %X", received_byte);
-    }
-  } else {
-    ESP_LOGE(TAG, "No response to SND_NKE");
-  }
-
-  return success;
-}
-
-// Slave must wait at least 11 bit times, and at max 330 bit times + 50ms before answering.
-// In case no answer within that time, retry at most twice.
-// (see 5.4 Communication Process)
-bool Kamstrup303WA02::DataLinkLayer::try_send_short_frame(const uint8_t c, const uint8_t a) {
-  bool success { false };
-  bool dataIsReceived { false };
-  flush_rx_buffer();
-  for (uint8_t transmitAttempt {0}; transmitAttempt < 3 && !dataIsReceived; ++transmitAttempt) {
-    if (transmitAttempt > 0) {
-      ESP_LOGD(TAG, "Retry transmit short frame");
-    }
-    send_short_frame(c, a);
-    // Sending takes about 4,58ms per byte. Short frame takes about 23ms to send.
-    vTaskDelay(25 / portTICK_PERIOD_MS);
-    dataIsReceived = wait_for_incoming_data();
-  }
-  success = dataIsReceived;
-  return success;
-}
-
-void Kamstrup303WA02::DataLinkLayer::flush_rx_buffer() {
-  while (this->uart_interface_->available()) {
-    int32_t byteCountInBuffer {this->uart_interface_->available()};
-    if (byteCountInBuffer > 255) {
-      byteCountInBuffer = 255;
-    }
-    uint8_t bytesInBuffer[byteCountInBuffer];
-    this->uart_interface_->read_array(bytesInBuffer, byteCountInBuffer);
-  }
-}
-
-void Kamstrup303WA02::DataLinkLayer::send_short_frame(const uint8_t c, const uint8_t a) {
-  const uint8_t data[] = { c, a };
-  const uint8_t checksum { calculate_checksum(data, 2) };
-  const uint8_t short_frame[] = { START_BYTE_SHORT_FRAME, c, a, checksum, STOP_BYTE };
-  this->uart_interface_->write_array(short_frame, 5);
-  delay(1);
-  this->uart_interface_->flush();
-  delay(1);
-}
-
-// TODO: rename to wait_for_incoming_telegram
-bool Kamstrup303WA02::DataLinkLayer::wait_for_incoming_data() {
-  bool dataReceived {false};
-  // 330 bits + 50ms = 330 * 1000 / 2400 + 50 ms = 187,5 ms
-  // Wait at least 11 bit times = 5ms
-  delay(138);
-  for (uint16_t i {0}; i < 500; ++i) {
-    if (this->uart_interface_->available() > 0) {
-      dataReceived = true;
-      break;
-    }
-    delay(1);
-  }
-  if (!dataReceived) {
-    ESP_LOGE(TAG, "waitForIncomingData - exit - No data received");
-  }
-  return dataReceived;
-}
-
-uint8_t Kamstrup303WA02::DataLinkLayer::calculate_checksum(const LongFrame* long_frame) const {
-  const uint8_t user_data_len = long_frame->l - 3;
-  uint8_t checksum = this->calculate_checksum(long_frame->user_data, user_data_len);
-  checksum += long_frame->c;
-  checksum += long_frame->a;
-  checksum += long_frame->ci;
-  return checksum;
-}
-
-uint8_t Kamstrup303WA02::DataLinkLayer::calculate_checksum(const uint8_t* data, size_t length) const {
-  uint8_t checksum { 0 };
-  for (size_t i = 0; i < length; ++i) {
-    checksum += data[i];
-  }
-  return checksum;
-}
 
 Kamstrup303WA02::Kamstrup303WA02(UartInterface* uart_interface) {
   this->data_link_layer_ = new DataLinkLayer(uart_interface);
+}
+
+bool Kamstrup303WA02::read_meter_data(Kamstrup303WA02::MbusMeterData* meter_data) {
+  return false;
 }
 
 bool Kamstrup303WA02::read_data(Kamstrup303WA02::MeterData * const data) {
@@ -613,188 +402,221 @@ void Kamstrup303WA02::copyDataToTargetBuffer(VariableDataRecord* dataRecord, voi
     }
 }
 
-// bool Kamstrup303WA02::DataLinkLayer::reqUd2(const uint8_t address, Kamstrup303WA02::DataLinkLayer::TelegramData * const dataBuffer) {
-//   ESP_LOGD(TAG, "reqUd2 - enter");
-// 	bool success {false};
-// 	// Initialize slave if required, and check for successful init
-// 	if (!slaveInitialized) {
-// 		slaveInitialized = sndNke(address);
-// 		if (!slaveInitialized) {
-//       ESP_LOGE(TAG, "SND_NKE: No or no correct answer!");
-// 			return false;
-// 		} else {
-//       ESP_LOGD(TAG, "SND_NKE: Success");
-//     }
-// 	}
+bool Kamstrup303WA02::DataLinkLayer::req_ud2(const uint8_t address, LongFrame* response_frame) {
+  bool success { false };
 
-// 	// Short Frame, expect RSP_UD
-// 	const uint8_t c {
-//     static_cast<uint8_t>(
-//       (1 << CFieldBitDirection) | (nextReqUd2Fcb << CFieldBitFCB) | (1 << CFieldBitFCV) | (CFieldFunctionReqUd2)
-//     )
-//   };
-// 	const bool dataIsReceived {trySendShortFrame(c, address)};
-// 	if (dataIsReceived) {
-// 		// We expect either a Control Frame, or a Long Frame. Handle as the same!
-// 		// Expected fields:
-// 		// Start, L, L, Start, C, A, CI, Checksum, Stop
-// 		uint8_t receivedByte {0};
-//     uartDevice->read_byte(&receivedByte);
-// 		if (StartByteControlAndLongFrame != receivedByte) {
-//       ESP_LOGE(TAG, "Incorrect start byte! %dX", receivedByte);
-// 			return false;
-// 		}
+  if (!this->meter_is_initialized_) {
+    if (this->snd_nke(address)) {
+      this->meter_is_initialized_ = true;
+    } else {
+      ESP_LOGI(TAG, "Could not initialize meter");
+      return false;
+    }
+  }
+  const uint8_t fcb = this->next_req_ud2_fcb_ ? 1u : 0u;
+  const uint8_t c = (1 << C_FIELD_BIT_DIRECTION) | (fcb << C_FIELD_BIT_FCB) | (1 << C_FIELD_BIT_FCV) | C_FIELD_FUNCTION_REQ_UD2;
+  bool received_response_to_request = this->try_send_short_frame(c, address);
+  if (received_response_to_request) {
+    const bool received_sane_response = this->parse_long_frame_response(response_frame);
+    if (received_sane_response && response_frame->a == address) {
+      success = true;
+    }
+  }
 
-// 		uint8_t receivedL {0};
-//     if (!readNextByte(&receivedL)) {
-//       return false;
-//     }
-// 		dataBuffer->dataLength = receivedL - 3;
-// 		if (!readNextByte(&receivedByte) || receivedByte != receivedL) {
-// 			return false;
-// 		}
-// 		if (!readNextByte(&receivedByte) || StartByteControlAndLongFrame != receivedByte) {
-// 			return false;
-// 		}
-// 		if (!readNextByte(&dataBuffer->c)) {
-//       return false;
-//     }
-// 		if (!readNextByte(&dataBuffer->a) || dataBuffer->a != address) {
-// 			return false;
-// 		}
-// 		if (!readNextByte(&dataBuffer->ci)) {
-//       return false;
-//     }
+  if (success) {
+    this->next_req_ud2_fcb_ = !this->next_req_ud2_fcb_;
+  }
+  return success;
+}
 
-//     for (uint8_t userDataByteIdx {0}; userDataByteIdx < receivedL - 3; ++userDataByteIdx) {
-// 			if (!readNextByte(&dataBuffer->data[userDataByteIdx])) {
-//         ESP_LOGE(TAG, "Could not read next byte");
-//         return false;
-//       }
-// 		}
+bool Kamstrup303WA02::DataLinkLayer::parse_long_frame_response(Kamstrup303WA02::DataLinkLayer::LongFrame* long_frame) {
+  long_frame->user_data = nullptr;
 
-// 		const uint8_t calculatedChecksum {calculateChecksum(reinterpret_cast<uint8_t*>(dataBuffer), receivedL)};
-// 		uint8_t receivedChecksum {0};
-// 		if (!readNextByte(&receivedChecksum)) {
-//       ESP_LOGE(TAG, "Did not receive checksum");
-// 			return false;
-// 		}
-//     if (calculatedChecksum != receivedChecksum) {
-//       ESP_LOGE(TAG, "Received incorrect checksum! Received: %X; expected: %X", receivedChecksum, calculatedChecksum);
-//       return false;
-//     }
+  uint8_t current_byte { 0 };
 
-// 		if (!readNextByte(&receivedByte)) {
-//       ESP_LOGE(TAG, "Did not receive stop byte");
-//       return false;
-//     }
-//     if (StopByte != receivedByte) {
-//       ESP_LOGE(TAG, "Received incorrect stop byte: %X", receivedByte);
-// 			return false;
-// 		}
-		
-// 		success = true;
-// 		nextReqUd2Fcb = !nextReqUd2Fcb;
-// 	}
-	
-// 	return success;
-// }
+  // Check start byte
+  if (!this->read_next_byte(&current_byte) || (current_byte != START_BYTE_CONTROL_AND_LONG_FRAME)) {
+    this->flush_rx_buffer();
+    return false;
+  }
 
-// bool Kamstrup303WA02::DataLinkLayer::readNextByte(uint8_t * const pReceivedByte) {
-//   const uint32_t timeBeforeStartingToWait {millis()};
-// 	while (uartDevice->available() == 0) {
-//     delay(1);
-//     if (millis() - timeBeforeStartingToWait > 150) {
-//       ESP_LOGE(TAG, "No data available after timeout");
-//       return false;
-//     }
-//   }
-//   uartDevice->read_byte(pReceivedByte);
-// 	return true;
-// }
+  // Check two identical L fields
+  uint8_t first_l_field { 0 };
+  uint8_t second_l_field { 0 };
+  if (!this->read_next_byte(&first_l_field) || !this->read_next_byte(&second_l_field)) {
+    this->flush_rx_buffer();
+    return false;
+  }
+  if (first_l_field != second_l_field) {
+    this->flush_rx_buffer();
+    return false;
+  }
+  long_frame->l = first_l_field;
 
-// bool Kamstrup303WA02::DataLinkLayer::sndNke(const uint8_t address) {
-//   bool success {false};
-//   // Short Frame, expect 0xE5
-//   const uint8_t c {static_cast<uint8_t>(
-//     (1 << CFieldBitDirection) | CFieldFunctionSndNke
-//   )};
-//   const bool dataIsReceived {trySendShortFrame(c, address)};
-//   if (dataIsReceived) {
-//     uint8_t receivedByte {0};
-//     uartDevice->read_byte(&receivedByte);
-//     success = StartByteSingleCharacter == receivedByte;
-//     if (!success) {
-//       ESP_LOGE(TAG, "Wrong answer to SND_NKE: %X", receivedByte);
-//     }
-//   } else {
-//     ESP_LOGE(TAG, "No answer to SND_NKE!");
-//   }
-//   nextReqUd2Fcb = true;
-//   nextSndUdFcb = true;
-//   return success;
-// }
+  // Check 2nd start byte
+  if (!this->read_next_byte(&current_byte) || (current_byte != START_BYTE_CONTROL_AND_LONG_FRAME)) {
+    this->flush_rx_buffer();
+    return false;
+  }
+  
+  // Check C field
+  if (!this->read_next_byte(&long_frame->c) || ((long_frame->c & 0x0F) != 0x08) || ((long_frame->c & 0xC0) != 0x00)) {
+    this->flush_rx_buffer();
+    return false;
+  }
 
-// bool Kamstrup303WA02::DataLinkLayer::trySendShortFrame(const uint8_t c, const uint8_t a) {
-//   bool success {false};
-//   bool dataIsReceived {false};
-//   flushRxBuffer();
-//   for (uint8_t transmitAttempt {0}; transmitAttempt < 3 && !dataIsReceived; ++transmitAttempt) {
-//     if (transmitAttempt > 0) {
-//       ESP_LOGD(TAG, "Retry transmit short frame");
-//     }
-//     sendShortFrame(c, a);
-//     dataIsReceived = waitForIncomingData();
-//   }
-//   success = dataIsReceived;
-//   return success;
-// }
+  // Read A field
+  if (!this->read_next_byte(&long_frame->a)) {
+    this->flush_rx_buffer();
+    return false;
+  }
 
-// void Kamstrup303WA02::DataLinkLayer::flushRxBuffer() {
-//   while (uartDevice->available()) {
-//     int32_t byteCountInBuffer {uartDevice->available()};
-//     if (byteCountInBuffer > 255) {
-//       byteCountInBuffer = 255;
-//     }
-//     uint8_t bytesInBuffer[byteCountInBuffer];
-//     uartDevice->read_array(bytesInBuffer, byteCountInBuffer);
-//   }
-// }
+  // Read CI field
+  if (!this->read_next_byte(&long_frame->ci)) {
+    this->flush_rx_buffer();
+    return false;
+  }
 
-// void Kamstrup303WA02::DataLinkLayer::sendShortFrame(const uint8_t c, const uint8_t a) {
-//   const uint8_t data[] = { c, a };
-//   const uint8_t checksum {calculateChecksum(data, 2)};
-//   const uint8_t shortFrame[] = { StartByteShortFrame, c, a, checksum, StopByte };
-//   uartDevice->write_array(shortFrame, 5);
-//   delay(1);
-//   uartDevice->flush();
-//   delay(1);
-// }
+  // Read user data
+  // Expected amount of user data: L - 3 (3 for C, A, CI)
+  const uint8_t user_data_len = long_frame->l - 3;
+  long_frame->user_data = new uint8_t[user_data_len];
+  for (uint8_t i { 0 }; i < user_data_len; ++i) {
+    if (!this->read_next_byte(&current_byte)) {
+      this->flush_rx_buffer();
+      return false;
+    }
+    long_frame->user_data[i] = current_byte;
+  }
 
-// bool Kamstrup303WA02::DataLinkLayer::waitForIncomingData() {
-//   bool dataReceived {false};
-//   // 330 bits + 50ms = 330 * 1000 / 2400 + 50 ms = 187,5 ms
-//   delay(138);
-//   for (uint16_t i {0}; i < 500; ++i) {
-//     if (uartDevice->available() > 0) {
-//       dataReceived = true;
-//       break;
-//     }
-//     delay(1);
-//   }
-//   if (!dataReceived) {
-//     ESP_LOGE(TAG, "waitForIncomingData - exit - No data received");
-//   }
-//   return dataReceived;
-// }
+  // Calculate, read and check the check sum
+  const uint8_t calculated_check_sum = this->calculate_checksum(long_frame);
+  if (!this->read_next_byte(&long_frame->check_sum) || (long_frame->check_sum != calculated_check_sum)) {
+    this->flush_rx_buffer();
+    return false;
+  }
 
-// uint8_t Kamstrup303WA02::DataLinkLayer::calculateChecksum(const uint8_t data[], const uint8_t length) {
-//   uint8_t checksum {0};
-//   for (uint8_t i {0}; i < length; ++i) {
-//     checksum += data[i];
-//   }
-//   return checksum;
-// }
+  // Check stop byte
+  if (!this->read_next_byte(&current_byte) || (STOP_BYTE != current_byte)) {
+    this->flush_rx_buffer();
+    return false;
+  }
+
+  // Flip the FCB bit to use for next REQ_UD2 message (see 5.5)
+  this->next_req_ud2_fcb_ = !this->next_req_ud2_fcb_;
+  return true;
+}
+
+bool Kamstrup303WA02::DataLinkLayer::read_next_byte(uint8_t* received_byte) {
+  const uint32_t time_before_starting_to_wait { millis() };
+	while (this->uart_interface_->available() == 0) {
+    delay(1);
+    if (millis() - time_before_starting_to_wait > 150) {
+      ESP_LOGE(TAG, "No data available after timeout");
+      return false;
+    }
+  }
+  this->uart_interface_->read_byte(received_byte);
+	return true;
+}
+
+bool Kamstrup303WA02::DataLinkLayer::snd_nke(const uint8_t address) {
+  bool success { false };
+
+  const uint8_t c = (1 << C_FIELD_BIT_DIRECTION) | (C_FIELD_FUNCTION_SND_NKE);
+  bool received_response_to_short_frame = try_send_short_frame(c, address);
+  if (received_response_to_short_frame) {
+    uint8_t received_byte { 0 };
+    this->uart_interface_->read_byte(&received_byte);
+    if (START_BYTE_SINGLE_CHARACTER == received_byte) {
+      success = true;
+      this->next_req_ud2_fcb_ = true;
+    } else {
+      ESP_LOGE(TAG, "Wrong answer to SND_NKE: %X", received_byte);
+    }
+  } else {
+    ESP_LOGE(TAG, "No response to SND_NKE");
+  }
+
+  return success;
+}
+
+// Slave must wait at least 11 bit times, and at max 330 bit times + 50ms before answering.
+// In case no answer within that time, retry at most twice.
+// (see 5.4 Communication Process)
+bool Kamstrup303WA02::DataLinkLayer::try_send_short_frame(const uint8_t c, const uint8_t a) {
+  bool success { false };
+  bool dataIsReceived { false };
+  flush_rx_buffer();
+  for (uint8_t transmitAttempt {0}; transmitAttempt < 3 && !dataIsReceived; ++transmitAttempt) {
+    if (transmitAttempt > 0) {
+      ESP_LOGD(TAG, "Retry transmit short frame");
+    }
+    send_short_frame(c, a);
+    // Sending takes about 4,58ms per byte. Short frame takes about 23ms to send.
+    vTaskDelay(25 / portTICK_PERIOD_MS);
+    dataIsReceived = wait_for_incoming_data();
+  }
+  success = dataIsReceived;
+  return success;
+}
+
+void Kamstrup303WA02::DataLinkLayer::flush_rx_buffer() {
+  while (this->uart_interface_->available()) {
+    int32_t byteCountInBuffer {this->uart_interface_->available()};
+    if (byteCountInBuffer > 255) {
+      byteCountInBuffer = 255;
+    }
+    uint8_t bytesInBuffer[byteCountInBuffer];
+    this->uart_interface_->read_array(bytesInBuffer, byteCountInBuffer);
+  }
+}
+
+void Kamstrup303WA02::DataLinkLayer::send_short_frame(const uint8_t c, const uint8_t a) {
+  const uint8_t data[] = { c, a };
+  const uint8_t checksum { calculate_checksum(data, 2) };
+  const uint8_t short_frame[] = { START_BYTE_SHORT_FRAME, c, a, checksum, STOP_BYTE };
+  this->uart_interface_->write_array(short_frame, 5);
+  delay(1);
+  this->uart_interface_->flush();
+  delay(1);
+}
+
+// TODO: rename to wait_for_incoming_telegram
+bool Kamstrup303WA02::DataLinkLayer::wait_for_incoming_data() {
+  bool dataReceived {false};
+  // 330 bits + 50ms = 330 * 1000 / 2400 + 50 ms = 187,5 ms
+  // Wait at least 11 bit times = 5ms
+  delay(138);
+  for (uint16_t i {0}; i < 500; ++i) {
+    if (this->uart_interface_->available() > 0) {
+      dataReceived = true;
+      break;
+    }
+    delay(1);
+  }
+  if (!dataReceived) {
+    ESP_LOGE(TAG, "waitForIncomingData - exit - No data received");
+  }
+  return dataReceived;
+}
+
+uint8_t Kamstrup303WA02::DataLinkLayer::calculate_checksum(const LongFrame* long_frame) const {
+  const uint8_t user_data_len = long_frame->l - 3;
+  uint8_t checksum = this->calculate_checksum(long_frame->user_data, user_data_len);
+  checksum += long_frame->c;
+  checksum += long_frame->a;
+  checksum += long_frame->ci;
+  return checksum;
+}
+
+uint8_t Kamstrup303WA02::DataLinkLayer::calculate_checksum(const uint8_t* data, size_t length) const {
+  uint8_t checksum { 0 };
+  for (size_t i = 0; i < length; ++i) {
+    checksum += data[i];
+  }
+  return checksum;
+}
 
 } //namespace warmtemetermbus
 } //namespace esphome

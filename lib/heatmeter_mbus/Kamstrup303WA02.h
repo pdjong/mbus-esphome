@@ -236,13 +236,10 @@ class Kamstrup303WA02 {
         bool read_next_byte(uint8_t* received_byte);
     };
 
-    // Kamstrup303WA02(uart::UARTDevice* uart_device) {
-    //   EspArduinoUartInterface *uart_interface = new EspArduinoUartInterface(uart_device);
-    //   this->data_link_layer_ = new DataLinkLayer(uart_interface);
-    // }
     Kamstrup303WA02(UartInterface* uart_interface);
 
     bool read_data(MeterData * const data);
+    bool read_meter_data(MbusMeterData* meter_data);
 
   protected:
     void read_next_data_block(DataBlock* data_block);
