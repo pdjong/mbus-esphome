@@ -16,7 +16,21 @@ class DataBlockReader {
     std::vector<Kamstrup303WA02::DataBlock*>* read_data_blocks_from_long_frame(Kamstrup303WA02::DataLinkLayer::LongFrame* long_frame);
 
   protected:
-     Kamstrup303WA02::DataBlock* read_next_data_block();
+     Kamstrup303WA02::DataLinkLayer::LongFrame* long_frame_;
+     uint8_t current_position_in_user_data_;
+
+  private:
+    static const uint8_t DIF_BIT_EXTENDED = 7;
+    static const uint8_t DIF_BIT_LSB_STORAGE_NUMBER = 6;
+    static const uint8_t DIF_BIT_FUNCTION_FIELD_LOW_BIT = 4;
+    static const uint8_t DIF_BITS_DATA_FIELD = 0x0F;
+    static const uint8_t DIFE_BITS_STORAGE_NUMBER = 0x0F;
+    static const uint8_t DIFE_BITS_TARIFF = 0x30;
+    static const uint8_t DIFE_BIT_TARIFF_LOW_BIT = 4;
+    
+    Kamstrup303WA02::DataBlock* read_next_data_block();
+    void read_dif_into_block(Kamstrup303WA02::DataBlock* data_block);
+    uint8_t read_next_byte();
 };
 
 } //namespace warmtemetermbus

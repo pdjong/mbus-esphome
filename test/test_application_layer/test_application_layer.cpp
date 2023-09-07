@@ -99,6 +99,7 @@ void test_datablockreader_read_data_blocks_from_long_frame_single_extended_dif_a
 int runUnityTests(void) {
   UNITY_BEGIN();
   RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_not_extended_dif_and_vif);
+  RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_extended_dif_and_vif_one_manufacturer_specific);
   return UNITY_END();
 }
 
