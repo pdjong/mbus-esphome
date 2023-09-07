@@ -11,7 +11,7 @@ using namespace esphome::warmtemetermbus;
 void setUp(void) {}
 void tearDown(void) {}
 
-void test_datablockreader_read_data_blocks_from_long_frame(void) {
+void test_datablockreader_read_data_blocks_from_long_frame_single_not_extended_dif_and_vif(void) {
   // Arrange
   DataBlockReader data_block_reader;
   uint8_t user_data[] = {
@@ -48,7 +48,7 @@ void test_datablockreader_read_data_blocks_from_long_frame(void) {
 
 int runUnityTests(void) {
   UNITY_BEGIN();
-  RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame);
+  RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_not_extended_dif_and_vif);
   return UNITY_END();
 }
 
