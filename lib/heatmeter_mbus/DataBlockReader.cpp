@@ -2,12 +2,15 @@
 #include <test_includes.h>
 #endif // UNIT_TEST
 
+#include <Arduino.h>
 #include "DataBlockReader.h"
 
 using std::vector;
 
 namespace esphome {
 namespace warmtemetermbus {
+
+static const char * TAG {"DataBlockReader"};
 
 vector<Kamstrup303WA02::DataBlock*>* DataBlockReader::read_data_blocks_from_long_frame(Kamstrup303WA02::DataLinkLayer::LongFrame* long_frame) {
   auto *data_blocks = new vector<Kamstrup303WA02::DataBlock*>();
@@ -62,6 +65,7 @@ void DataBlockReader::read_dif_into_block(Kamstrup303WA02::DataBlock* data_block
       data_block->binary_data = new uint8_t[4];
       break;
     default:
+      ESP_LOGI(TAG, "Data Field %x not supported", data_field);
       data_block->data_length = 0;
       data_block->binary_data = nullptr;
       break;
@@ -99,14 +103,14 @@ void DataBlockReader::read_vif_into_block(Kamstrup303WA02::DataBlock* data_block
       // Energy in J
       data_block->ten_power = unit_and_multiplier & 0b111;
       data_block->unit = Kamstrup303WA02::Unit::J;
-    } else {// if ((unit_and_multiplier & 0b1111000) == 0b0001000) {
-    //   // Energy in J
-    //   data_block->ten_power = unit_and_multiplier & 0b111;
-    //   data_block->unit = Kamstrup303WA02::Unit::J;
+    } else {
+      ESP_LOGI(TAG, "Primary VIF with unit and multiplier %x not yet supported", unit_and_multiplier);
     }
   } else if (vif_is_manufacturer_specific) {
     data_block->unit = Kamstrup303WA02::Unit::manufacturer_specific;
     data_block->is_manufacturer_specific = true;
+  } else {
+    ESP_LOGI(TAG, "Only primary VIF or manufacturer specific supported. VIF %x unsupported.", vif);
   }
 
   // Ignore the VIF extension; just skip over it
