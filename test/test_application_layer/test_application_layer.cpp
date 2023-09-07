@@ -14,15 +14,16 @@ void tearDown(void) {}
 void test_datablockreader_read_data_blocks_from_long_frame(void) {
   // Arrange
   DataBlockReader data_block_reader;
+  uint8_t user_data[] = {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Fixed data header
+    0x04, 0x06, 0x78, 0x56, 0x34, 0x12 // data block: instantaneous, 32 bit integer, Energy in 10^(6-3) Wh (=kWh), value 0x12345678
+  };
   Kamstrup303WA02::DataLinkLayer::LongFrame long_frame = {
     .l = 21,
     .c = 0x08,
     .a = 0x0A,
     .ci = 0x72,
-    // .user_data = {
-    //   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Fixed data header
-    //   0x04, 0x06, 0x78, 0x56, 0x34, 0x12 // data block: instantaneous, 32 bit integer, Energy in 10^(6-3) Wh (=kWh), value 0x12345678
-    // }
+    .user_data = user_data
   };
 
   // Act
@@ -37,6 +38,7 @@ void test_datablockreader_read_data_blocks_from_long_frame(void) {
   TEST_ASSERT_EQUAL(0, actual_data_block->tariff);
   TEST_ASSERT_EQUAL(3, actual_data_block->ten_power);
   TEST_ASSERT_EQUAL(0, actual_data_block->index);
+  TEST_ASSERT_FALSE(actual_data_block->is_manufacturer_specific);
   TEST_ASSERT_EQUAL(4, actual_data_block->data_length);
   TEST_ASSERT_EQUAL(0x78, actual_data_block->binary_data[0]);
   TEST_ASSERT_EQUAL(0x56, actual_data_block->binary_data[1]);
