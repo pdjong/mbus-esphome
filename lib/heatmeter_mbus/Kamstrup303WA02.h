@@ -152,29 +152,29 @@ class Kamstrup303WA02 {
       DateValue dateTimeLogged;
     } MeterData;
 
-    // typedef enum Unit {
-    //   Wh,
-    //   J,
-    //   cubic_meter,
-    //   kg,
-    //   seconds,
-    //   minutes,
-    //   hours,
-    //   days,
-    //   W,
-    //   J_per_hour,
-    //   cubic_meter_per_hour,
-    //   cubic_meter_per_minute,
-    //   cubic_meter_per_second,
-    //   kg_per_hour,
-    //   degrees_celsius,
-    //   K,
-    //   bar,
-    //   date,
-    //   time_and_date,
-    //   manufacturer_specific,
-    //   dimensionless
-    // } Unit;
+    enum class Unit {
+      Wh,
+      J,
+      cubic_meter,
+      kg,
+      seconds,
+      minutes,
+      hours,
+      days,
+      W,
+      J_per_hour,
+      cubic_meter_per_hour,
+      cubic_meter_per_minute,
+      cubic_meter_per_second,
+      kg_per_hour,
+      degrees_celsius,
+      K,
+      bar,
+      date,
+      time_and_date,
+      manufacturer_specific,
+      dimensionless
+    };
 
     typedef struct DataBlock {
       Function function;
@@ -184,13 +184,15 @@ class Kamstrup303WA02 {
       uint8_t* binary_data;
       uint8_t index;
       int8_t ten_power;
-      int8_t unit;
+      Unit unit;
       bool is_manufacturer_specific;
     } DataBlock;
 
     typedef struct MbusMeterData {
       std::vector<DataBlock> data_blocks;
     } MbusMeterData;
+
+    static const uint8_t FIXED_DATA_HEADER_SIZE = 12;
 
     class DataLinkLayer {
       public:
@@ -244,9 +246,9 @@ class Kamstrup303WA02 {
 
   protected:
     void read_next_data_block(DataBlock* data_block);
+    DataLinkLayer* data_link_layer_;
 
   private:
-    DataLinkLayer* data_link_layer_;
 
     void readDataRecord(VariableDataRecord * const dataRecord, const DataLinkLayer::LongFrame * const userData, uint16_t * const startOfDataRecordIdx);
     void copyDataToTargetBuffer(VariableDataRecord* dataRecord, void* targetBuffer);

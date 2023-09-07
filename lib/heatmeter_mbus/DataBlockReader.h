@@ -27,9 +27,13 @@ class DataBlockReader {
     static const uint8_t DIFE_BITS_STORAGE_NUMBER = 0x0F;
     static const uint8_t DIFE_BITS_TARIFF = 0x30;
     static const uint8_t DIFE_BIT_TARIFF_LOW_BIT = 4;
-    
+    static const uint8_t VIF_BITS_UNIT_AND_MULTIPLIER = 0x7F;
+    static const uint8_t VIF_BIT_EXTENDED = 7;
+
     Kamstrup303WA02::DataBlock* read_next_data_block();
     void read_dif_into_block(Kamstrup303WA02::DataBlock* data_block);
+    void read_vif_into_block(Kamstrup303WA02::DataBlock* data_block);
+    void read_data_into_block(Kamstrup303WA02::DataBlock* data_block);
     uint8_t read_next_byte();
 };
 
