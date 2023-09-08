@@ -135,6 +135,18 @@ void DataBlockReader::read_vif_into_block(Kamstrup303WA02::DataBlock* data_block
       // Power in J/h
       data_block->ten_power = unit_and_multiplier & 0b111;
       data_block->unit = Kamstrup303WA02::Unit::J_per_hour;
+    } else if ((unit_and_multiplier & 0b1111000) == 0b0111000) {
+      // Volume Flow in m3/h
+      data_block->ten_power = (unit_and_multiplier & 0b111) - 6;
+      data_block->unit = Kamstrup303WA02::Unit::cubic_meter_per_hour;
+    } else if ((unit_and_multiplier & 0b1111000) == 0b1000000) {
+      // Volume Flow in m3/min
+      data_block->ten_power = (unit_and_multiplier & 0b111) - 7;
+      data_block->unit = Kamstrup303WA02::Unit::cubic_meter_per_minute;
+    } else if ((unit_and_multiplier & 0b1111000) == 0b1001000) {
+      // Volume Flow in m3/s
+      data_block->ten_power = (unit_and_multiplier & 0b111) - 9;
+      data_block->unit = Kamstrup303WA02::Unit::cubic_meter_per_second;
     } else {
       ESP_LOGI(TAG, "Primary VIF with unit and multiplier %x not yet supported", unit_and_multiplier);
     }
