@@ -102,6 +102,34 @@ namespace esphome
               }
               heatMeterMbus->have_dumped_data_blocks_ = true;
             }
+
+            for (auto it = heatMeterMbus->sensors_.begin(); it != heatMeterMbus->sensors_.end(); ++it) {
+              MbusSensor *sensor = *it;
+              for (auto data_block_it = mbus_meter_data.data_blocks->begin(); data_block_it != mbus_meter_data.data_blocks->end(); ++data_block_it) {
+                Kamstrup303WA02::DataBlock *data_block = *data_block_it;
+                if (data_block->index == sensor->index_) {
+                  ESP_LOGI(TAG, "Found matching data block");
+                  Kamstrup303WA02::DataBlock *matching_data_block { data_block };
+                  switch (matching_data_block->data_length) {
+                    case 2: {
+                      int16_t *raw_value = reinterpret_cast<int16_t*>(matching_data_block->binary_data);
+                      float value = static_cast<float>(*raw_value * pow(10, matching_data_block->ten_power));
+                      sensor->publish_state(value);
+                      break;
+                    }
+                    case 4: {
+                      int32_t *raw_value = reinterpret_cast<int32_t*>(matching_data_block->binary_data);
+                      float value = static_cast<float>(*raw_value * pow(10, matching_data_block->ten_power));
+                      sensor->publish_state(value);
+                      break;
+                    }
+                    default:
+                      break;
+                  }
+                  break;
+                }
+              }
+            }
           }
           else {
             ESP_LOGE(TAG, "Did not successfully read meter data");
@@ -141,39 +169,6 @@ namespace esphome
     void HeatMeterMbus::dump_config()
     {
       ESP_LOGCONFIG(TAG, "HeatMeterMbus sensor");
-      LOG_SENSOR("  ", "T1 Actual", this->t1_actual_sensor_);
-      LOG_SENSOR("  ", "Heat Energy E1", this->heat_energy_e1_sensor_);
-      LOG_SENSOR("  ", "Volume V1", this->volume_v1_sensor_);
-      LOG_SENSOR("  ", "Energy E8 Inlet", this->energy_e8_inlet_sensor_);
-      LOG_SENSOR("  ", "Energy E9 Outlet", this->energy_e9_outlet_sensor_);
-      LOG_SENSOR("  ", "Operating Hours", this->operating_hours_sensor_);
-      LOG_SENSOR("  ", "Error Hour Counter", this->error_hour_counter_sensor_);
-      LOG_SENSOR("  ", "T1 Actual", this->t1_actual_sensor_);
-      LOG_SENSOR("  ", "T2 Actual", this->t2_actual_sensor_);
-      LOG_SENSOR("  ", "T1 - T2", this->t1_minus_t2_sensor_);
-      LOG_SENSOR("  ", "Power E1 / E3", this->power_e1_over_e3_sensor_);
-      LOG_SENSOR("  ", "Power Max Month", this->power_max_month_sensor_);
-      LOG_SENSOR("  ", "Flow V1 Actual", this->flow_v1_actual_sensor_);
-      LOG_SENSOR("  ", "Flow V1 Max Month", this->flow_v1_max_month_sensor_);
-      LOG_SENSOR("  ", "Heat Energy E1 Old", this->heat_energy_e1_old_sensor_);
-      LOG_SENSOR("  ", "Volume V1 Old", this->volume_v1_old_sensor_);
-      LOG_SENSOR("  ", "Energy E8 Inlet Old", this->energy_e8_inlet_old_sensor_);
-      LOG_SENSOR("  ", "Energy E9 Outlet Old", this->energy_e9_outlet_old_sensor_);
-      LOG_SENSOR("  ", "Power Max Year Old", this->power_max_year_old_sensor_);
-      LOG_SENSOR("  ", "Flow V1 Max Year Old", this->flow_v1_max_year_old_sensor_);
-      LOG_SENSOR("  ", "Log Year", this->log_year_sensor_);
-      LOG_SENSOR("  ", "Log Month", this->log_month_sensor_);
-      LOG_SENSOR("  ", "Log Day", this->log_day_sensor_);
-
-      LOG_BINARY_SENSOR("  ", "No Voltage Supply", this->info_no_voltage_supply_binary_sensor_);
-      LOG_BINARY_SENSOR("  ", "T1 Above Measuring Range or Disconnected", this->info_t1_above_range_or_disconnected_binary_sensor_);
-      LOG_BINARY_SENSOR("  ", "T2 Above Measuring Range or Disconnected", this->info_t2_above_range_or_disconnected_binary_sensor_);
-      LOG_BINARY_SENSOR("  ", "T1 Below Measuring Range or Short-circuited", this->info_t1_below_range_or_shorted_binary_sensor_);
-      LOG_BINARY_SENSOR("  ", "T2 Below Measuring Range or Short-circuited", this->info_t2_below_range_or_shorted_binary_sensor_);
-      LOG_BINARY_SENSOR("  ", "Invalid Temperature Difference (T1 - T2)", this->info_invalid_temp_difference_binary_sensor_);
-      LOG_BINARY_SENSOR("  ", "V1 Air", this->info_v1_air_binary_sensor_);
-      LOG_BINARY_SENSOR("  ", "V1 Wrong Flow Direction", this->info_v1_wrong_flow_direction_binary_sensor_);
-      LOG_BINARY_SENSOR("  ", "V1 > Qs For More Than An Hour", this->info_v1_greater_than_qs_more_than_hour_binary_sensor_);
     }
   } // namespace warmtemetermbus
 } // namespace esphome
