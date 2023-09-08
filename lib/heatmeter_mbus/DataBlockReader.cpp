@@ -103,6 +103,38 @@ void DataBlockReader::read_vif_into_block(Kamstrup303WA02::DataBlock* data_block
       // Energy in J
       data_block->ten_power = unit_and_multiplier & 0b111;
       data_block->unit = Kamstrup303WA02::Unit::J;
+    } else if ((unit_and_multiplier & 0b1111000) == 0b0010000) {
+      // Volume in m3
+      data_block->ten_power = (unit_and_multiplier & 0b111) - 6;
+      data_block->unit = Kamstrup303WA02::Unit::cubic_meter;
+    } else if ((unit_and_multiplier & 0b1111100) == 0b0100000) {
+      // On Time
+      data_block->ten_power = 0;
+      const uint8_t unit_value = (unit_and_multiplier & 0b11);
+      switch (unit_value) {
+        case 0:
+          data_block->unit = Kamstrup303WA02::Unit::seconds;
+          break;
+        case 1:
+          data_block->unit = Kamstrup303WA02::Unit::minutes;
+          break;
+        case 2:
+          data_block->unit = Kamstrup303WA02::Unit::hours;
+          break;
+        case 3:
+          data_block->unit = Kamstrup303WA02::Unit::days;
+          break;
+        default:
+          break;
+      }
+    } else if ((unit_and_multiplier & 0b1111000) == 0b0101000) {
+      // Power in W
+      data_block->ten_power = (unit_and_multiplier & 0b111) - 3;
+      data_block->unit = Kamstrup303WA02::Unit::W;
+    } else if ((unit_and_multiplier & 0b1111000) == 0b0110000) {
+      // Power in J/h
+      data_block->ten_power = unit_and_multiplier & 0b111;
+      data_block->unit = Kamstrup303WA02::Unit::J_per_hour;
     } else {
       ESP_LOGI(TAG, "Primary VIF with unit and multiplier %x not yet supported", unit_and_multiplier);
     }
