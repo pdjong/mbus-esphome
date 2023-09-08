@@ -349,6 +349,120 @@ void test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_
   TEST_ASSERT_EQUAL(0x01, actual_data_block->binary_data[1]);
 }
 
+void test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_power(void) {
+  // Arrange
+  DataBlockReader data_block_reader;
+  uint8_t user_data[] = {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Fixed data header
+    0x02, 0x2A, 0x34, 0x12, // data block: instantaneous, 16 bit integer, Power in 10^(2-3) W, value 0x1234
+    0x02, 0x33, 0x12, 0x00 // data block: instantaneous, 16 bit integer, Power in 10^3 J/h, value 0x0012
+  };
+  Kamstrup303WA02::DataLinkLayer::LongFrame long_frame = {
+    .l = 23,
+    .c = 0x08,
+    .a = 0x0A,
+    .ci = 0x72,
+    .user_data = user_data
+  };
+
+  // Act
+  vector<Kamstrup303WA02::DataBlock*>* actual_data_blocks = data_block_reader.read_data_blocks_from_long_frame(&long_frame);
+
+  // Assert
+  TEST_ASSERT_TRUE(actual_data_blocks != nullptr);
+  TEST_ASSERT_EQUAL(2, actual_data_blocks->size());
+
+  // Block 0
+  Kamstrup303WA02::DataBlock *actual_data_block = actual_data_blocks->at(0);
+  TEST_ASSERT_EQUAL(Kamstrup303WA02::Function::instantaneous, actual_data_block->function);
+  TEST_ASSERT_EQUAL(0, actual_data_block->storage_number);
+  TEST_ASSERT_EQUAL(0, actual_data_block->tariff);
+  TEST_ASSERT_EQUAL(-1, actual_data_block->ten_power);
+  TEST_ASSERT_EQUAL(Kamstrup303WA02::Unit::W, actual_data_block->unit);
+  TEST_ASSERT_EQUAL(0, actual_data_block->index);
+  TEST_ASSERT_FALSE(actual_data_block->is_manufacturer_specific);
+  TEST_ASSERT_EQUAL(2, actual_data_block->data_length);
+  TEST_ASSERT_EQUAL(0x34, actual_data_block->binary_data[0]);
+  TEST_ASSERT_EQUAL(0x12, actual_data_block->binary_data[1]);
+
+  // Block 1
+  actual_data_block = actual_data_blocks->at(1);
+  TEST_ASSERT_EQUAL(Kamstrup303WA02::Function::instantaneous, actual_data_block->function);
+  TEST_ASSERT_EQUAL(0, actual_data_block->storage_number);
+  TEST_ASSERT_EQUAL(0, actual_data_block->tariff);
+  TEST_ASSERT_EQUAL(3, actual_data_block->ten_power);
+  TEST_ASSERT_EQUAL(Kamstrup303WA02::Unit::J_per_hour, actual_data_block->unit);
+  TEST_ASSERT_EQUAL(1, actual_data_block->index);
+  TEST_ASSERT_FALSE(actual_data_block->is_manufacturer_specific);
+  TEST_ASSERT_EQUAL(2, actual_data_block->data_length);
+  TEST_ASSERT_EQUAL(0x12, actual_data_block->binary_data[0]);
+  TEST_ASSERT_EQUAL(0x00, actual_data_block->binary_data[1]);
+}
+
+void test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_volume_flow(void) {
+  // Arrange
+  DataBlockReader data_block_reader;
+  uint8_t user_data[] = {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Fixed data header
+    0x02, 0x39, 0x34, 0x12, // data block: instantaneous, 16 bit integer, Volume Flow in 10^(1-6) m3/h, value 0x1234
+    0x02, 0x45, 0x10, 0x02, // data block: instantaneous, 16 bit integer, Volume Flow in 10^(5-7) m3/min, value 0x1234
+    0x02, 0x4A, 0x34, 0x12 // data block: instantaneous, 16 bit integer, Volume Flow in 10^(2-9) m3/s, value 0x1234
+  };
+  Kamstrup303WA02::DataLinkLayer::LongFrame long_frame = {
+    .l = 19,
+    .c = 0x08,
+    .a = 0x0A,
+    .ci = 0x72,
+    .user_data = user_data
+  };
+
+  // Act
+  vector<Kamstrup303WA02::DataBlock*>* actual_data_blocks = data_block_reader.read_data_blocks_from_long_frame(&long_frame);
+
+  // Assert
+  TEST_ASSERT_TRUE(actual_data_blocks != nullptr);
+  TEST_ASSERT_EQUAL(3, actual_data_blocks->size());
+
+  // Block 0
+  Kamstrup303WA02::DataBlock *actual_data_block = actual_data_blocks->at(0);
+  TEST_ASSERT_EQUAL(Kamstrup303WA02::Function::instantaneous, actual_data_block->function);
+  TEST_ASSERT_EQUAL(0, actual_data_block->storage_number);
+  TEST_ASSERT_EQUAL(0, actual_data_block->tariff);
+  TEST_ASSERT_EQUAL(-5, actual_data_block->ten_power);
+  TEST_ASSERT_EQUAL(Kamstrup303WA02::Unit::cubic_meter_per_hour, actual_data_block->unit);
+  TEST_ASSERT_EQUAL(0, actual_data_block->index);
+  TEST_ASSERT_FALSE(actual_data_block->is_manufacturer_specific);
+  TEST_ASSERT_EQUAL(2, actual_data_block->data_length);
+  TEST_ASSERT_EQUAL(0x34, actual_data_block->binary_data[0]);
+  TEST_ASSERT_EQUAL(0x12, actual_data_block->binary_data[1]);
+
+  // Block 1
+  actual_data_block = actual_data_blocks->at(1);
+  TEST_ASSERT_EQUAL(Kamstrup303WA02::Function::instantaneous, actual_data_block->function);
+  TEST_ASSERT_EQUAL(0, actual_data_block->storage_number);
+  TEST_ASSERT_EQUAL(0, actual_data_block->tariff);
+  TEST_ASSERT_EQUAL(-2, actual_data_block->ten_power);
+  TEST_ASSERT_EQUAL(Kamstrup303WA02::Unit::cubic_meter_per_minute, actual_data_block->unit);
+  TEST_ASSERT_EQUAL(1, actual_data_block->index);
+  TEST_ASSERT_FALSE(actual_data_block->is_manufacturer_specific);
+  TEST_ASSERT_EQUAL(2, actual_data_block->data_length);
+  TEST_ASSERT_EQUAL(0x10, actual_data_block->binary_data[0]);
+  TEST_ASSERT_EQUAL(0x02, actual_data_block->binary_data[1]);
+
+  // Block 2
+  actual_data_block = actual_data_blocks->at(2);
+  TEST_ASSERT_EQUAL(Kamstrup303WA02::Function::instantaneous, actual_data_block->function);
+  TEST_ASSERT_EQUAL(0, actual_data_block->storage_number);
+  TEST_ASSERT_EQUAL(0, actual_data_block->tariff);
+  TEST_ASSERT_EQUAL(-7, actual_data_block->ten_power);
+  TEST_ASSERT_EQUAL(Kamstrup303WA02::Unit::cubic_meter_per_second, actual_data_block->unit);
+  TEST_ASSERT_EQUAL(2, actual_data_block->index);
+  TEST_ASSERT_FALSE(actual_data_block->is_manufacturer_specific);
+  TEST_ASSERT_EQUAL(2, actual_data_block->data_length);
+  TEST_ASSERT_EQUAL(0x34, actual_data_block->binary_data[0]);
+  TEST_ASSERT_EQUAL(0x12, actual_data_block->binary_data[1]);
+}
+
 int runUnityTests(void) {
   UNITY_BEGIN();
   RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_not_extended_dif_and_vif);
@@ -358,6 +472,12 @@ int runUnityTests(void) {
   RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_energy);
   RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_volume);
   RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_on_time);
+  RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_power);
+  RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_volume_flow);
+  //! flow temperature
+  //! return temperature
+  //! temperature difference
+  //! time point VIF = 0x6C = 0b0110 1100 ==> date
   return UNITY_END();
 }
 
