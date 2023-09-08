@@ -607,6 +607,43 @@ void test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_
   TEST_ASSERT_EQUAL(0x12, actual_data_block->binary_data[1]);
 }
 
+void test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_time_point_date(void) {
+  // Arrange
+  DataBlockReader data_block_reader;
+  uint8_t user_data[] = {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Fixed data header
+    0x02, 0x6C, 0xE1, 0x21 // data block: instantaneous, 16 bit integer, Time Point date only,
+    // value 01 Jan 2023: 0b YYYY MMMM YYYD DDDD = 0b 0010 0001 1110 0001 = 0x21E1
+  };
+  Kamstrup303WA02::DataLinkLayer::LongFrame long_frame = {
+    .l = 19,
+    .c = 0x08,
+    .a = 0x0A,
+    .ci = 0x72,
+    .user_data = user_data
+  };
+
+  // Act
+  vector<Kamstrup303WA02::DataBlock*>* actual_data_blocks = data_block_reader.read_data_blocks_from_long_frame(&long_frame);
+
+  // Assert
+  TEST_ASSERT_TRUE(actual_data_blocks != nullptr);
+  TEST_ASSERT_EQUAL(1, actual_data_blocks->size());
+
+  // Block 0
+  Kamstrup303WA02::DataBlock *actual_data_block = actual_data_blocks->at(0);
+  TEST_ASSERT_EQUAL(Kamstrup303WA02::Function::instantaneous, actual_data_block->function);
+  TEST_ASSERT_EQUAL(0, actual_data_block->storage_number);
+  TEST_ASSERT_EQUAL(0, actual_data_block->tariff);
+  TEST_ASSERT_EQUAL(0, actual_data_block->ten_power);
+  TEST_ASSERT_EQUAL(Kamstrup303WA02::Unit::date, actual_data_block->unit);
+  TEST_ASSERT_EQUAL(0, actual_data_block->index);
+  TEST_ASSERT_FALSE(actual_data_block->is_manufacturer_specific);
+  TEST_ASSERT_EQUAL(2, actual_data_block->data_length);
+  TEST_ASSERT_EQUAL(0xE1, actual_data_block->binary_data[0]);
+  TEST_ASSERT_EQUAL(0x21, actual_data_block->binary_data[1]);
+}
+
 int runUnityTests(void) {
   UNITY_BEGIN();
   RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_not_extended_dif_and_vif);
@@ -621,7 +658,7 @@ int runUnityTests(void) {
   RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_flow_temperature);
   RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_return_temperature);
   RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_temperature_difference);
-  //! time point VIF = 0x6C = 0b0110 1100 ==> date
+  RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_time_point_date);
   return UNITY_END();
 }
 
