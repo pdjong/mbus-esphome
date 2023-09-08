@@ -159,6 +159,10 @@ void DataBlockReader::read_vif_into_block(Kamstrup303WA02::DataBlock* data_block
       // Temperature Difference in K
       data_block->ten_power = (unit_and_multiplier & 0b11) - 3;
       data_block->unit = Kamstrup303WA02::Unit::K;
+    } else if ((unit_and_multiplier & 0b1111110) == 0b1101100) {
+      // Time Point
+      data_block->ten_power = 0;
+      data_block->unit = Kamstrup303WA02::Unit::date;
     } else {
       ESP_LOGI(TAG, "Primary VIF with unit and multiplier %x not yet supported", unit_and_multiplier);
     }
