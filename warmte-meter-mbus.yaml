@@ -31,7 +31,7 @@ ota:
 wifi:
 # Next two lines for building locally with ESPHome
   ssid: "Unicorn"
-  password: "Sparkling" #password...
+  password: "?" #password...
 # Next two lines for building on Home Assistant OS, ESPHome
 #  ssid: !secret wifi_ssid
 #  password: !secret wifi_password
