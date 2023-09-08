@@ -72,6 +72,8 @@ class HeatMeterMbus : public Component, public uart::UARTDevice {
     void readMbus();
 
   private:
+    uint8_t address { 0x01 };
+    bool have_dumped_data_blocks_ { false };
     Pwm pwm;
     Kamstrup303WA02* kamstrup;
     bool updateRequested { false };
