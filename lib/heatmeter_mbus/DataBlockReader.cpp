@@ -147,6 +147,18 @@ void DataBlockReader::read_vif_into_block(Kamstrup303WA02::DataBlock* data_block
       // Volume Flow in m3/s
       data_block->ten_power = (unit_and_multiplier & 0b111) - 9;
       data_block->unit = Kamstrup303WA02::Unit::cubic_meter_per_second;
+    } else if ((unit_and_multiplier & 0b1111100) == 0b1011000) {
+      // Flow Temperature in deg C
+      data_block->ten_power = (unit_and_multiplier & 0b11) - 3;
+      data_block->unit = Kamstrup303WA02::Unit::degrees_celsius;
+    } else if ((unit_and_multiplier & 0b1111100) == 0b1011100) {
+      // Return Temperature in deg C
+      data_block->ten_power = (unit_and_multiplier & 0b11) - 3;
+      data_block->unit = Kamstrup303WA02::Unit::degrees_celsius;
+    } else if ((unit_and_multiplier & 0b1111100) == 0b1100000) {
+      // Temperature Difference in K
+      data_block->ten_power = (unit_and_multiplier & 0b11) - 3;
+      data_block->unit = Kamstrup303WA02::Unit::K;
     } else {
       ESP_LOGI(TAG, "Primary VIF with unit and multiplier %x not yet supported", unit_and_multiplier);
     }
