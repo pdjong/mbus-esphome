@@ -153,6 +153,7 @@ namespace esphome
       ESP_LOGI(TAG, "Disabling Mbus");
       pwm.disable();
       mbusEnabled = false;
+      this->have_dumped_data_blocks_ = false;
     }
 
     void HeatMeterMbus::readMbus()
