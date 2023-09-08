@@ -189,7 +189,7 @@ class Kamstrup303WA02 {
     } DataBlock;
 
     typedef struct MbusMeterData {
-      std::vector<DataBlock>* data_blocks;
+      std::vector<DataBlock*>* data_blocks { nullptr };
     } MbusMeterData;
 
     static const uint8_t FIXED_DATA_HEADER_SIZE = 12;

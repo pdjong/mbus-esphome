@@ -632,13 +632,19 @@ void test_kamstrup303wa02_read_data(void) {
                     0                           // core
   );
 
-  const uint8_t fake_data2[] = { 0x68, 0x03, 0x03, 0x68, 0x08, 0xB2, 0x72, 0x2C, 0x16 };
+  const uint8_t fake_data2[] = { 
+    0x68, 0x1B, 0x1B, 0x68, 0x08, 0xB2, 0x72, // start of package
+    0x01, 0x23, 0x81, 0x82, 0x2D, 0x2C, 0x40, 0x04, 0xDE, 0x10, 0x00, 0x00, // Fixed Data Header
+    0x04, 0x06, 0x25, 0x0F, 0x00, 0x00, // data block 0
+    0x04, 0x14, 0x7A, 0xCF, 0x01, 0x00, // data block 1
+    0x7E, 0x16 // end of package
+  };
   FakeUartInterfaceTaskArgs args2 = { 
     .uart_interface = &uart_interface,
     .respond_to_nth_write = 2,
     .delay_in_ms  = 200,
     .data_to_return = fake_data2,
-    .len_of_data_to_return = 9
+    .len_of_data_to_return = 33
   };
   TaskHandle_t handle2;
   xTaskCreatePinnedToCore(fake_uart_interface_task,
@@ -649,86 +655,37 @@ void test_kamstrup303wa02_read_data(void) {
                     &handle2,                    // Handle, not needed
                     0                           // core
   );
-  //TestableKamstrup303WA02 kamstrup303wa02(&uart_interface);
+  TestableKamstrup303WA02 kamstrup303wa02(&uart_interface);
 
   // Act
   Kamstrup303WA02::MbusMeterData meter_data;
-  //kamstrup303wa02.read_meter_data(&meter_data);
+  kamstrup303wa02.read_meter_data(&meter_data);
 
   vTaskDelete(handle1);
   vTaskDelete(handle2);
+
   // Assert
+  TEST_ASSERT_NOT_NULL(meter_data.data_blocks);
+  TEST_ASSERT_EQUAL(2, meter_data.data_blocks->size());
+
+  // Block 0
+  Kamstrup303WA02::DataBlock *data_block = meter_data.data_blocks->at(0);
+  TEST_ASSERT_EQUAL(0, data_block->index);
+  TEST_ASSERT_EQUAL(4, data_block->data_length);
+  TEST_ASSERT_EQUAL(0x25, data_block->binary_data[0]);
+  TEST_ASSERT_EQUAL(0x0F, data_block->binary_data[1]);
+  TEST_ASSERT_EQUAL(0x00, data_block->binary_data[2]);
+  TEST_ASSERT_EQUAL(0x00, data_block->binary_data[3]);
+
+  // Block 1
+  data_block = meter_data.data_blocks->at(1);
+  TEST_ASSERT_EQUAL(1, data_block->index);
+  TEST_ASSERT_EQUAL(4, data_block->data_length);
+  TEST_ASSERT_EQUAL(0x7A, data_block->binary_data[0]);
+  TEST_ASSERT_EQUAL(0xCF, data_block->binary_data[1]);
+  TEST_ASSERT_EQUAL(0x01, data_block->binary_data[2]);
+  TEST_ASSERT_EQUAL(0x00, data_block->binary_data[3]);
 }
-
-// void test_data_link_layer_req_ud2_check_snd_nke_to_init(void) {
-//   // Arrange
-//   FakeUartInterface uart_interface;
-//   const uint8_t fake_data[] = { 0xE5, 0x68, 0x06, 0x06, 0x68, 0x08, 0xB2, 0x72, 0x03, 0x02, 0x01, 0x32, 0x16 };
-//   FakeUartInterfaceTaskArgs args = { 
-//     .uart_interface = &uart_interface,
-//     .respond_to_nth_write = 1,
-//     .delay_in_ms  = 5,
-//     .data_to_return = fake_data,
-//     .len_of_data_to_return = 13
-//   };
-//   xTaskCreatePinnedToCore(fake_uart_interface_task,
-//                     "fake_uart_interface_task1", // name
-//                     30000,                      // stack size (in words)
-//                     &args,                      // input params
-//                     1,                          // priority
-//                     nullptr,                    // Handle, not needed
-//                     0                           // core
-//   );
-
-//   const uint8_t fake_data2[] = { 0x68, 0x06, 0x06, 0x68, 0x08, 0xB2, 0x72, 0x03, 0x02, 0x01, 0x32, 0x16 };
-//   FakeUartInterfaceTaskArgs args2 = { 
-//     .uart_interface = &uart_interface,
-//     .respond_to_nth_write = 2,
-//     .delay_in_ms  = 200,
-//     .data_to_return = fake_data2,
-//     .len_of_data_to_return = 12
-//   };
-//   xTaskCreatePinnedToCore(fake_uart_interface_task,
-//                     "fake_uart_interface_task2", // name
-//                     30000,                      // stack size (in words)
-//                     &args2,                      // input params
-//                     1,                          // priority
-//                     nullptr,                    // Handle, not needed
-//                     0                           // core
-//   );
-
-//   TestableDataLinkLayer dataLinkLayer(&uart_interface);
-//   dataLinkLayer.set_meter_is_initialized(false);
-
-//   // Act
-//   const uint8_t a = 0xB2;
-//   Kamstrup303WA02::DataLinkLayer::LongFrame response_frame;
-//   const bool actual_return_value = dataLinkLayer.req_ud2(a, &response_frame);
-
-//   // Assert
-//   // Check the sent data: should be a short frame!
-//   // Start:     0x10
-//   // C:         0x7B
-//   // A:         0xB2
-//   // Check sum: 0x2D
-//   // Stop:      0x16
-//   TEST_ASSERT_EQUAL(2, uart_interface.written_arrays_.size());
-//   FakeUartInterface::WrittenArray actual_written_array = uart_interface.written_arrays_[0];
-//   TEST_ASSERT_EQUAL(5, actual_written_array.len);
-//   TEST_ASSERT_EQUAL(0x10, actual_written_array.data[0]);
-//   TEST_ASSERT_EQUAL(0x40, actual_written_array.data[1]);
-//   TEST_ASSERT_EQUAL(0xB2, actual_written_array.data[2]);
-//   TEST_ASSERT_EQUAL(0xF2, actual_written_array.data[3]);
-//   TEST_ASSERT_EQUAL(0x16, actual_written_array.data[4]);
-
-//   actual_written_array = uart_interface.written_arrays_[1];
-//   TEST_ASSERT_EQUAL(5, actual_written_array.len);
-//   TEST_ASSERT_EQUAL(0x10, actual_written_array.data[0]);
-//   TEST_ASSERT_EQUAL(0x7B, actual_written_array.data[1]);
-//   TEST_ASSERT_EQUAL(0xB2, actual_written_array.data[2]);
-//   TEST_ASSERT_EQUAL(0x2D, actual_written_array.data[3]);
-//   TEST_ASSERT_EQUAL(0x16, actual_written_array.data[4]);
-// }
 
 int runUnityTests(void) {
   UNITY_BEGIN();
