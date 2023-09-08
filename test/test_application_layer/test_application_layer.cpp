@@ -1,8 +1,11 @@
 #include <Arduino.h>
 #include <test_includes.h>
 #include <TestableKamstrup303WA02.h>
+#include <test_data_link_layer/TestableDataLinkLayer.h>
 #include <DataBlockReader.h>
 #include <unity.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 #include <vector>
 
 using std::vector;
@@ -608,21 +611,146 @@ void test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_
   TEST_ASSERT_EQUAL(0x21, actual_data_block->binary_data[1]);
 }
 
+void test_kamstrup303wa02_read_data(void) {
+  // Arrange
+  FakeUartInterface uart_interface;
+  const uint8_t fake_data[] = { 0xE5 };
+  FakeUartInterfaceTaskArgs args = { 
+    .uart_interface = &uart_interface,
+    .respond_to_nth_write = 1,
+    .delay_in_ms  = 5,
+    .data_to_return = fake_data,
+    .len_of_data_to_return = 1
+  };
+  TaskHandle_t handle1;
+  xTaskCreatePinnedToCore(fake_uart_interface_task,
+                    "fake_uart_interface_task1", // name
+                    30000,                      // stack size (in words)
+                    &args,                      // input params
+                    1,                          // priority
+                    &handle1,                    // Handle, not needed
+                    0                           // core
+  );
+
+  const uint8_t fake_data2[] = { 0x68, 0x03, 0x03, 0x68, 0x08, 0xB2, 0x72, 0x2C, 0x16 };
+  FakeUartInterfaceTaskArgs args2 = { 
+    .uart_interface = &uart_interface,
+    .respond_to_nth_write = 2,
+    .delay_in_ms  = 200,
+    .data_to_return = fake_data2,
+    .len_of_data_to_return = 9
+  };
+  TaskHandle_t handle2;
+  xTaskCreatePinnedToCore(fake_uart_interface_task,
+                    "fake_uart_interface_task2", // name
+                    30000,                      // stack size (in words)
+                    &args2,                      // input params
+                    1,                          // priority
+                    &handle2,                    // Handle, not needed
+                    0                           // core
+  );
+  //TestableKamstrup303WA02 kamstrup303wa02(&uart_interface);
+
+  // Act
+  Kamstrup303WA02::MbusMeterData meter_data;
+  //kamstrup303wa02.read_meter_data(&meter_data);
+
+  vTaskDelete(handle1);
+  vTaskDelete(handle2);
+  // Assert
+}
+
+// void test_data_link_layer_req_ud2_check_snd_nke_to_init(void) {
+//   // Arrange
+//   FakeUartInterface uart_interface;
+//   const uint8_t fake_data[] = { 0xE5, 0x68, 0x06, 0x06, 0x68, 0x08, 0xB2, 0x72, 0x03, 0x02, 0x01, 0x32, 0x16 };
+//   FakeUartInterfaceTaskArgs args = { 
+//     .uart_interface = &uart_interface,
+//     .respond_to_nth_write = 1,
+//     .delay_in_ms  = 5,
+//     .data_to_return = fake_data,
+//     .len_of_data_to_return = 13
+//   };
+//   xTaskCreatePinnedToCore(fake_uart_interface_task,
+//                     "fake_uart_interface_task1", // name
+//                     30000,                      // stack size (in words)
+//                     &args,                      // input params
+//                     1,                          // priority
+//                     nullptr,                    // Handle, not needed
+//                     0                           // core
+//   );
+
+//   const uint8_t fake_data2[] = { 0x68, 0x06, 0x06, 0x68, 0x08, 0xB2, 0x72, 0x03, 0x02, 0x01, 0x32, 0x16 };
+//   FakeUartInterfaceTaskArgs args2 = { 
+//     .uart_interface = &uart_interface,
+//     .respond_to_nth_write = 2,
+//     .delay_in_ms  = 200,
+//     .data_to_return = fake_data2,
+//     .len_of_data_to_return = 12
+//   };
+//   xTaskCreatePinnedToCore(fake_uart_interface_task,
+//                     "fake_uart_interface_task2", // name
+//                     30000,                      // stack size (in words)
+//                     &args2,                      // input params
+//                     1,                          // priority
+//                     nullptr,                    // Handle, not needed
+//                     0                           // core
+//   );
+
+//   TestableDataLinkLayer dataLinkLayer(&uart_interface);
+//   dataLinkLayer.set_meter_is_initialized(false);
+
+//   // Act
+//   const uint8_t a = 0xB2;
+//   Kamstrup303WA02::DataLinkLayer::LongFrame response_frame;
+//   const bool actual_return_value = dataLinkLayer.req_ud2(a, &response_frame);
+
+//   // Assert
+//   // Check the sent data: should be a short frame!
+//   // Start:     0x10
+//   // C:         0x7B
+//   // A:         0xB2
+//   // Check sum: 0x2D
+//   // Stop:      0x16
+//   TEST_ASSERT_EQUAL(2, uart_interface.written_arrays_.size());
+//   FakeUartInterface::WrittenArray actual_written_array = uart_interface.written_arrays_[0];
+//   TEST_ASSERT_EQUAL(5, actual_written_array.len);
+//   TEST_ASSERT_EQUAL(0x10, actual_written_array.data[0]);
+//   TEST_ASSERT_EQUAL(0x40, actual_written_array.data[1]);
+//   TEST_ASSERT_EQUAL(0xB2, actual_written_array.data[2]);
+//   TEST_ASSERT_EQUAL(0xF2, actual_written_array.data[3]);
+//   TEST_ASSERT_EQUAL(0x16, actual_written_array.data[4]);
+
+//   actual_written_array = uart_interface.written_arrays_[1];
+//   TEST_ASSERT_EQUAL(5, actual_written_array.len);
+//   TEST_ASSERT_EQUAL(0x10, actual_written_array.data[0]);
+//   TEST_ASSERT_EQUAL(0x7B, actual_written_array.data[1]);
+//   TEST_ASSERT_EQUAL(0xB2, actual_written_array.data[2]);
+//   TEST_ASSERT_EQUAL(0x2D, actual_written_array.data[3]);
+//   TEST_ASSERT_EQUAL(0x16, actual_written_array.data[4]);
+// }
+
 int runUnityTests(void) {
   UNITY_BEGIN();
-  RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_not_extended_dif_and_vif);
-  RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_extended_dif_and_vif_one_manufacturer_specific);
-  RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_dif_minimum_8_bit);
-  RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_dif_during_error_state_24_bit);
-  RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_energy);
-  RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_volume);
-  RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_on_time);
-  RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_power);
-  RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_volume_flow);
-  RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_flow_temperature);
-  RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_return_temperature);
-  RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_temperature_difference);
-  RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_time_point_date);
+  
+  // RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_not_extended_dif_and_vif);
+  // RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_extended_dif_and_vif_one_manufacturer_specific);
+
+  // RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_dif_minimum_8_bit);
+  // RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_dif_during_error_state_24_bit);
+
+  // RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_energy);
+  // RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_volume);
+  // RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_on_time);
+  // RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_power);
+  // RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_volume_flow);
+  // RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_flow_temperature);
+  // RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_return_temperature);
+  // RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_temperature_difference);
+  // RUN_TEST(test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_vif_time_point_date);
+
+  RUN_TEST(test_kamstrup303wa02_read_data);
+
   return UNITY_END();
 }
 

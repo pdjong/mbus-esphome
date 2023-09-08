@@ -64,25 +64,6 @@ void test_data_link_layer_calculate_checksum_with_long_frame() {
   TEST_ASSERT_EQUAL(0x33, actual_checksum);
 }
 
-typedef struct FakeUartInterfaceTaskArgs {
-  FakeUartInterface* uart_interface;
-  const uint8_t respond_to_nth_write;
-  const uint8_t delay_in_ms;
-  const uint8_t* data_to_return;
-  const size_t len_of_data_to_return;
-} FakeUartInterfaceTaskArgs;
-
-void fake_uart_interface_task(void* param) {
-  FakeUartInterfaceTaskArgs *args = reinterpret_cast<FakeUartInterfaceTaskArgs*>(param);
-  FakeUartInterface *uartInterface = args->uart_interface;
-  while (uartInterface->write_array_call_count() < args->respond_to_nth_write) {
-    vTaskDelay(1 / portTICK_PERIOD_MS);
-  }
-  delay(args->delay_in_ms);
-  uartInterface->set_fake_data_to_return(args->data_to_return, args->len_of_data_to_return);
-  vTaskDelete(NULL);
-}
-
 void test_data_link_layer_try_send_short_frame_reply_to_first_request(void) {
   // Arrange
 

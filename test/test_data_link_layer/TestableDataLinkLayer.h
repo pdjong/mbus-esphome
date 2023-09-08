@@ -6,6 +6,8 @@
 #include <vector>
 #include <queue>
 #include <Kamstrup303WA02.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 using std::vector;
 using std::queue;
