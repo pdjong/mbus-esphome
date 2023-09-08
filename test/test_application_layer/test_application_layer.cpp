@@ -622,14 +622,13 @@ void test_kamstrup303wa02_read_data(void) {
     .data_to_return = fake_data,
     .len_of_data_to_return = 1
   };
-  TaskHandle_t handle1;
   xTaskCreatePinnedToCore(fake_uart_interface_task,
                     "fake_uart_interface_task1", // name
-                    30000,                      // stack size (in words)
-                    &args,                      // input params
-                    1,                          // priority
-                    &handle1,                    // Handle, not needed
-                    0                           // core
+                    30000,                       // stack size (in words)
+                    &args,                       // input params
+                    1,                           // priority
+                    nullptr,                     // Handle, not needed
+                    0                            // core
   );
 
   const uint8_t fake_data2[] = { 
@@ -646,23 +645,19 @@ void test_kamstrup303wa02_read_data(void) {
     .data_to_return = fake_data2,
     .len_of_data_to_return = 33
   };
-  TaskHandle_t handle2;
   xTaskCreatePinnedToCore(fake_uart_interface_task,
                     "fake_uart_interface_task2", // name
-                    30000,                      // stack size (in words)
+                    30000,                       // stack size (in words)
                     &args2,                      // input params
-                    1,                          // priority
-                    &handle2,                    // Handle, not needed
-                    0                           // core
+                    1,                           // priority
+                    nullptr,                     // Handle, not needed
+                    0                            // core
   );
   TestableKamstrup303WA02 kamstrup303wa02(&uart_interface);
 
   // Act
   Kamstrup303WA02::MbusMeterData meter_data;
-  kamstrup303wa02.read_meter_data(&meter_data);
-
-  vTaskDelete(handle1);
-  vTaskDelete(handle2);
+  kamstrup303wa02.read_meter_data(&meter_data, 0xB2);
 
   // Assert
   TEST_ASSERT_NOT_NULL(meter_data.data_blocks);

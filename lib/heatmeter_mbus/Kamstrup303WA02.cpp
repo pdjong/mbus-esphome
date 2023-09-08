@@ -4,6 +4,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include "Kamstrup303WA02.h"
+#include "DataBlockReader.h"
 #include <Arduino.h>
 
 namespace esphome {
@@ -16,391 +17,52 @@ Kamstrup303WA02::Kamstrup303WA02(UartInterface* uart_interface) {
   this->data_link_layer_ = new DataLinkLayer(uart_interface);
 }
 
-bool Kamstrup303WA02::read_meter_data(Kamstrup303WA02::MbusMeterData* meter_data) {
-  return false;
-}
+bool Kamstrup303WA02::read_meter_data(Kamstrup303WA02::MbusMeterData* meter_data, uint8_t address) {
+  ESP_LOGI(TAG, "read_meter_data - enter");
 
-bool Kamstrup303WA02::read_data(Kamstrup303WA02::MeterData * const data) {
-  ESP_LOGD(TAG, "read_data - enter");
-  bool isSuccessful {false};
-	DataLinkLayer::LongFrame telegramData;
-	if (!this->data_link_layer_->req_ud2(0x01, &telegramData)) {
-	 	return false;
-	}
-	
-	if ((telegramData.ci >> 4) != 7) {
-		return false;
-	}
-
-	switch (telegramData.ci & 0x03) {
-		case 0x0:
-			ESP_LOGE(TAG, "General App Error!");
-			break;
-		case 0x1:
-			ESP_LOGI(TAG, "Alarm Status!");
-			break;
-		case 0x2: {
-			// Variable data response
-      ESP_LOGV(TAG, "Variable data response");      
-      VariableDataRecord dataRecord;
-      uint16_t startOfDataRecordIdx {12};
-      
-      // Heat energy E1
-      readDataRecord(&dataRecord, &telegramData, &startOfDataRecordIdx);
-      switch (dataRecord.unitAndMultiplier & 0x78) {
-          case 0x00:
-              // 000 0nnn: 10^(nnn-3) Wh
-              data->heatEnergyE1.unit = Wh;
-              data->heatEnergyE1.tenPower = (dataRecord.unitAndMultiplier & 0x07) - 3;
-              break;
-          case 0x08:
-              // 000 1nnn: 10^nnn J
-              data->heatEnergyE1.unit = J;
-              data->heatEnergyE1.tenPower = dataRecord.unitAndMultiplier & 0x07;
-              break;
-          default:
-              break;
-      }
-      copyDataToTargetBuffer(&dataRecord, &(data->heatEnergyE1.value));
-      
-      // Volume V1
-      readDataRecord(&dataRecord, &telegramData, &startOfDataRecordIdx);
-      data->volumeV1.tenPower = (dataRecord.unitAndMultiplier & 0x07) - 6;
-      copyDataToTargetBuffer(&dataRecord, &(data->volumeV1.value));
-      
-      // Energy E8: inlet
-      readDataRecord(&dataRecord, &telegramData, &startOfDataRecordIdx);
-      // See MULTICAL_303_-_Technical_Description_-_English.pdf 7.1.2:
-      data->energyE8.tenPower = -2 - data->volumeV1.tenPower;
-      copyDataToTargetBuffer(&dataRecord, &(data->energyE8.value));
-      
-      // Energy E9: outlet
-      readDataRecord(&dataRecord, &telegramData, &startOfDataRecordIdx);
-      // See MULTICAL_303_-_Technical_Description_-_English.pdf 7.1.2:
-      data->energyE9.tenPower = -2 - data->volumeV1.tenPower;
-      copyDataToTargetBuffer(&dataRecord, &(data->energyE9.value));
-      
-      // Operating hours
-      readDataRecord(&dataRecord, &telegramData, &startOfDataRecordIdx);
-      data->operatingHours.unit = static_cast<DurationUnit>(dataRecord.unitAndMultiplier & 0x03);
-      // this value is stored as 32-bit. But the meter sends a 24-bit value.
-      // To prevent garbage values, set the value to zero first.
-      data->operatingHours.value = 0;
-      copyDataToTargetBuffer(&dataRecord, &(data->operatingHours.value));
-      
-      // Error hour counter
-      readDataRecord(&dataRecord, &telegramData, &startOfDataRecordIdx);
-      data->errorHourCounter.unit = static_cast<DurationUnit>(dataRecord.unitAndMultiplier & 0x03);
-      copyDataToTargetBuffer(&dataRecord, &(data->errorHourCounter.value));
-      
-      // T1 actual
-      readDataRecord(&dataRecord, &telegramData, &startOfDataRecordIdx);
-      data->t1Actual.tenPower = (dataRecord.unitAndMultiplier & 0x03) - 3;
-      copyDataToTargetBuffer(&dataRecord, &(data->t1Actual.value));
-      
-      // T2 actual
-      readDataRecord(&dataRecord, &telegramData, &startOfDataRecordIdx);
-      data->t2Actual.tenPower = (dataRecord.unitAndMultiplier & 0x03) - 3;
-      copyDataToTargetBuffer(&dataRecord, &(data->t2Actual.value));
-      
-      // T1 - T2
-      readDataRecord(&dataRecord, &telegramData, &startOfDataRecordIdx);
-      data->diffT1T2.tenPower = (dataRecord.unitAndMultiplier & 0x03) - 3;
-      copyDataToTargetBuffer(&dataRecord, &(data->diffT1T2.value));
-      
-      // Power E1/E3 actual
-      readDataRecord(&dataRecord, &telegramData, &startOfDataRecordIdx);
-      switch (dataRecord.unitAndMultiplier & 0x78) {
-        case 0x28:
-          // 010 1nnn: 10^(nnn-3) W
-          data->powerE1OverE3Actual.unit = W;
-          data->powerE1OverE3Actual.tenPower = (dataRecord.unitAndMultiplier & 0x07) - 3;
-          break;
-        case 0x08:
-          // 011 0nnn: 10^nnn J/h
-          data->powerE1OverE3Actual.unit = JperH;
-          data->powerE1OverE3Actual.tenPower = dataRecord.unitAndMultiplier & 0x07;
-          break;
-        default:
-          break;
-      }
-      copyDataToTargetBuffer(&dataRecord, &(data->powerE1OverE3Actual.value));
-      
-      // Power max month
-      readDataRecord(&dataRecord, &telegramData, &startOfDataRecordIdx);
-      switch (dataRecord.unitAndMultiplier & 0x78) {
-        case 0x28:
-          // 010 1nnn: 10^(nnn-3) W
-          data->powerMaxMonth.unit = W;
-          data->powerMaxMonth.tenPower = (dataRecord.unitAndMultiplier & 0x07) - 3;
-          break;
-        case 0x08:
-          // 011 0nnn: 10^nnn J/h
-          data->powerMaxMonth.unit = JperH;
-          data->powerMaxMonth.tenPower = dataRecord.unitAndMultiplier & 0x07;
-          break;
-        default:
-          break;
-      }
-      copyDataToTargetBuffer(&dataRecord, &(data->powerMaxMonth.value));
-      
-      // Flow V1 actual
-      readDataRecord(&dataRecord, &telegramData, &startOfDataRecordIdx);
-      switch (dataRecord.unitAndMultiplier & 0x78) {
-        case 0x38:
-          data->flowV1Actual.unit = m3PerHour;
-          data->flowV1Actual.tenPower = (dataRecord.unitAndMultiplier & 0x07) - 6;
-          break;
-        case 0x40:
-          data->flowV1Actual.unit = m3PerMinute;
-          data->flowV1Actual.tenPower = (dataRecord.unitAndMultiplier & 0x07) - 7;
-          break;
-        case 0x48:
-          data->flowV1Actual.unit = m3PerSecond;
-          data->flowV1Actual.tenPower = (dataRecord.unitAndMultiplier & 0x07) - 9;
-          break;
-        default:
-          break;
-      }
-      copyDataToTargetBuffer(&dataRecord, &(data->flowV1Actual.value));
-      
-      // Flow v1 max month
-      readDataRecord(&dataRecord, &telegramData, &startOfDataRecordIdx);
-      switch (dataRecord.unitAndMultiplier & 0x78) {
-        case 0x38:
-          data->flowV1MaxMonth.unit = m3PerHour;
-          data->flowV1MaxMonth.tenPower = (dataRecord.unitAndMultiplier & 0x07) - 6;
-          break;
-        case 0x40:
-          data->flowV1MaxMonth.unit = m3PerMinute;
-          data->flowV1MaxMonth.tenPower = (dataRecord.unitAndMultiplier & 0x07) - 7;
-          break;
-        case 0x48:
-          data->flowV1MaxMonth.unit = m3PerSecond;
-          data->flowV1MaxMonth.tenPower = (dataRecord.unitAndMultiplier & 0x07) - 9;
-          break;
-        default:
-          break;
-      }
-      copyDataToTargetBuffer(&dataRecord, &(data->flowV1MaxMonth.value));
-      
-      // Info bits
-      readDataRecord(&dataRecord, &telegramData, &startOfDataRecordIdx);
-      copyDataToTargetBuffer(&dataRecord, &(data->infoBits));
-      
-      // Heat energy E1 - old
-      readDataRecord(&dataRecord, &telegramData, &startOfDataRecordIdx);
-      switch (dataRecord.unitAndMultiplier & 0x78) {
-        case 0x00:
-          // 000 0nnn: 10^(nnn-3) Wh
-          data->heatEnergyE1Old.unit = Wh;
-          data->heatEnergyE1Old.tenPower = (dataRecord.unitAndMultiplier & 0x07) - 3;
-          break;
-        case 0x08:
-          // 000 1nnn: 10^nnn J
-          data->heatEnergyE1Old.unit = J;
-          data->heatEnergyE1.tenPower = dataRecord.unitAndMultiplier & 0x07;
-          break;
-        default:
-          break;
-      }
-      copyDataToTargetBuffer(&dataRecord, &(data->heatEnergyE1Old.value));
-      
-      // Volume V1 - old
-      readDataRecord(&dataRecord, &telegramData, &startOfDataRecordIdx);
-      data->volumeV1Old.tenPower = (dataRecord.unitAndMultiplier & 0x07) - 6;
-      copyDataToTargetBuffer(&dataRecord, &(data->volumeV1Old.value));
-                  
-      // Energy E8: inlet - old
-      readDataRecord(&dataRecord, &telegramData, &startOfDataRecordIdx);
-      // See MULTICAL_303_-_Technical_Description_-_English.pdf 7.1.2:
-      data->energyE8Old.tenPower = -2 - data->heatEnergyE1.tenPower;
-      copyDataToTargetBuffer(&dataRecord, &(data->energyE8Old.value));
-                  
-      // Energy E9: outlet - old
-      readDataRecord(&dataRecord, &telegramData, &startOfDataRecordIdx);
-      // See MULTICAL_303_-_Technical_Description_-_English.pdf 7.1.2:
-      data->energyE9Old.tenPower = -2 - data->heatEnergyE1.tenPower;
-      copyDataToTargetBuffer(&dataRecord, &(data->energyE9Old.value));
-      
-      // Power max year - old
-      readDataRecord(&dataRecord, &telegramData, &startOfDataRecordIdx);
-      switch (dataRecord.unitAndMultiplier & 0x78) {
-        case 0x28:
-          // 010 1nnn: 10^(nnn-3) W
-          data->powerMaxYear.unit = W;
-          data->powerMaxYear.tenPower = (dataRecord.unitAndMultiplier & 0x07) - 3;
-          break;
-        case 0x08:
-          // 011 0nnn: 10^nnn J/h
-          data->powerMaxYear.unit = JperH;
-          data->powerMaxYear.tenPower = dataRecord.unitAndMultiplier & 0x07;
-          break;
-        default:
-          break;
-      }
-      copyDataToTargetBuffer(&dataRecord, &(data->powerMaxYear.value));
-      
-      // Flow V1 max year
-      readDataRecord(&dataRecord, &telegramData, &startOfDataRecordIdx);
-      switch (dataRecord.unitAndMultiplier & 0x78) {
-        case 0x38:
-          data->flowV1MaxYear.unit = m3PerHour;
-          data->flowV1MaxYear.tenPower = (dataRecord.unitAndMultiplier & 0x07) - 6;
-          break;
-        case 0x40:
-          data->flowV1MaxYear.unit = m3PerMinute;
-          data->flowV1MaxYear.tenPower = (dataRecord.unitAndMultiplier & 0x07) - 7;
-          break;
-        case 0x48:
-          data->flowV1MaxYear.unit = m3PerSecond;
-          data->flowV1MaxYear.tenPower = (dataRecord.unitAndMultiplier & 0x07) - 9;
-          break;
-        default:
-          break;  
-      }
-      copyDataToTargetBuffer(&dataRecord, &(data->flowV1MaxYear.value));
-      
-      // Date and Time (logged)
-      readDataRecord(&dataRecord, &telegramData, &startOfDataRecordIdx);
-      // Bits 0-4: day
-      // Bits 8-11: month
-      // Bits 5-7 & 12-15: year
-      const uint16_t * const dateTimeBits {reinterpret_cast<uint16_t*>(dataRecord.data)};
-      data->dateTimeLogged.day = *dateTimeBits & 0x001F;
-      data->dateTimeLogged.month = (*dateTimeBits & 0x0F00) >> 8;
-      data->dateTimeLogged.year = ((*dateTimeBits & 0xF000) >> 9) | ((*dateTimeBits & 0x00E0) >> 5);
-      
-      isSuccessful = true;
-			break;
-		}
-		case 0x3:
-			ESP_LOGV(TAG, "Static data response");
-			break;
-		default:
-      ESP_LOGW(TAG, "Unknown response to REQ_UD2");
-			break;
-	}
-  ESP_LOGD(TAG, "read_data - exit");
-	return isSuccessful;	
-}
-
-void Kamstrup303WA02::readDataRecord(VariableDataRecord * const dataRecord, const DataLinkLayer::LongFrame * const userData, uint16_t * const startOfDataRecordIdx) {
-  const uint8_t dif {userData->user_data[*startOfDataRecordIdx]};
-
-  dataRecord->dataType = dif & 0x0F;
-  dataRecord->function = (dif & (3 << 4)) >> 4;
-  dataRecord->storageNumber = (dif & (1 << 6)) >> 6;
-  
-  dataRecord->subUnit = 0;
-  dataRecord->tariff = 0;
-  
-  bool isExtended {dif & (1 << 7)};
-  uint16_t edifIdx {static_cast<uint16_t>(*startOfDataRecordIdx + 1)};
-  uint8_t edifNr {0};
-  while (isExtended) {
-      uint8_t edif {userData->user_data[edifIdx++]};
-      
-      uint32_t subUnitInEdif {static_cast<uint32_t>((edif | (1 << 6)) >> 6)};
-      subUnitInEdif <<= edifNr;
-      dataRecord->subUnit |= subUnitInEdif;
-      
-      uint32_t tariffInEdif {static_cast<uint32_t>((edif | (3 << 4)) >> 4)};
-      tariffInEdif <<= (edifNr * 2);
-      dataRecord->tariff |= tariffInEdif;
-      
-      uint64_t storageNrInEdif {static_cast<uint64_t>(edif | 0xF)};
-      storageNrInEdif <<= (edifNr * 4 + 1);
-      dataRecord->storageNumber |= storageNrInEdif;
-      
-      isExtended = edif & (1 << 7);
-      ++edifNr;
-  }
-  
-  // Now read the VIB - start with VIF
-  uint16_t vifIdx {edifIdx};
-  const uint8_t vif {userData->user_data[vifIdx]};
-
-  dataRecord->unitAndMultiplier = vif & 0x7F;
-
-  isExtended = vif & (1 << 7);
-  uint16_t evifIdx {static_cast<uint16_t>(vifIdx + 1)};
-  while (isExtended) {
-      const uint8_t evif {userData->user_data[evifIdx++]};
-      isExtended = evif & (1 << 7);
+  bool success { false };
+  DataLinkLayer::LongFrame response_to_req_ud2;
+  if (!this->data_link_layer_->req_ud2(address, &response_to_req_ud2)) {
+    ESP_LOGI(TAG, "req_ud2: fail");
+    return false;
   }
 
-  // Find out data length. Number of bytes depends on DIF data field.
-  uint16_t dataIdx {evifIdx};
-  uint8_t dataLength {0};
-
-  switch (dataRecord->dataType) {
-      case 0x0:
-         [[fallthrough]];
-      case 0x1:
-         [[fallthrough]];
-      case 0x2:
-         [[fallthrough]];
-      case 0x3:
-         [[fallthrough]];
-      case 0x4:
-          dataLength = dataRecord->dataType;
-          break;
-      case 0x5:
-          dataLength = 4;
-          break;
-      case 0x6:
-          dataLength = 6;
-          break;
-      case 0x7:
-          dataLength = 8;
-          break;
-      case 0x9:
-          dataLength = 1;
-          break;
-      case 0xA:
-          dataLength = 2;
-          break;
-      case 0xB:
-          dataLength = 3;
-          break;
-      case 0xC:
-          dataLength = 4;
-          break;
-      case 0xD:
-          dataLength = userData->user_data[dataIdx++];
-          break;
-      case 0xE:
-          dataLength = 3;
-          break;
-      default:
-          dataLength = 1;
-          break;
-  }    
-  dataRecord->dataLength = dataLength;
-  
-  // Read data
-  // For now store at max 8 bytes
-  // Initialize data to 0!
-  for (uint8_t i {0}; i < 8; ++i) {
-    dataRecord->data[i] = 0;
-  }
-  for (uint8_t i {0}; i < dataLength; ++i) {
-      const uint8_t currentByte {userData->user_data[dataIdx + i]};
-      if (i < 8) {
-          dataRecord->data[i] = currentByte;
-      }
+  // Check upper nibble CI
+  if ((response_to_req_ud2.ci & 0xF0) != 0x70) {
+    ESP_LOGI(TAG, "CI not as expected");
   }
 
-  *startOfDataRecordIdx = dataIdx + dataLength;
-}
-
-void Kamstrup303WA02::copyDataToTargetBuffer(VariableDataRecord* dataRecord, void* targetBuffer) {
-    uint8_t *byteTargetBuffer {reinterpret_cast<uint8_t*>(targetBuffer)};
-    for (uint8_t i {0}; i < dataRecord->dataLength; ++i) {
-        *byteTargetBuffer++ = dataRecord->data[i];
+  // Check type of response
+  switch (response_to_req_ud2.ci & 0x03) {
+    case 0:
+      ESP_LOGE(TAG, "General App Error");
+      break;
+    case 1:
+      ESP_LOGI(TAG, "Alarm Status");
+      break;
+    case 2: {
+      ESP_LOGI(TAG, "Variable data response");
+      DataBlockReader data_block_reader;
+      auto data_blocks = data_block_reader.read_data_blocks_from_long_frame(&response_to_req_ud2);
+      meter_data->data_blocks = data_blocks;
+      success = true;
+      break;
     }
+    case 3:
+      ESP_LOGI(TAG, "Fixed data response");
+      break;
+  }
+
+  return success;
 }
+
+      // // Bits 0-4: day
+      // // Bits 8-11: month
+      // // Bits 5-7 & 12-15: year
+      // const uint16_t * const dateTimeBits {reinterpret_cast<uint16_t*>(dataRecord.data)};
+      // data->dateTimeLogged.day = *dateTimeBits & 0x001F;
+      // data->dateTimeLogged.month = (*dateTimeBits & 0x0F00) >> 8;
+      // data->dateTimeLogged.year = ((*dateTimeBits & 0xF000) >> 9) | ((*dateTimeBits & 0x00E0) >> 5);
 
 bool Kamstrup303WA02::DataLinkLayer::req_ud2(const uint8_t address, LongFrame* response_frame) {
   bool success { false };

@@ -238,17 +238,10 @@ class Kamstrup303WA02 {
 
     Kamstrup303WA02(UartInterface* uart_interface);
 
-    bool read_data(MeterData * const data);
-    bool read_meter_data(MbusMeterData* meter_data);
+    bool read_meter_data(MbusMeterData* meter_data, uint8_t address);
 
   protected:
-    void read_next_data_block(DataBlock* data_block);
     DataLinkLayer* data_link_layer_;
-
-  private:
-
-    void readDataRecord(VariableDataRecord * const dataRecord, const DataLinkLayer::LongFrame * const userData, uint16_t * const startOfDataRecordIdx);
-    void copyDataToTargetBuffer(VariableDataRecord* dataRecord, void* targetBuffer);
 };
 
 // class Kamstrup303WA02 {
