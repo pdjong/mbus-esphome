@@ -468,7 +468,7 @@ void test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_
   DataBlockReader data_block_reader;
   uint8_t user_data[] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Fixed data header
-    0x02, 0x5B, 0x34, 0x12 // data block: instantaneous, 16 bit integer, Flow Temperature in 10^(3-3) m3/h, value 0x1234
+    0x02, 0x5B, 0x34, 0x12 // data block: instantaneous, 16 bit integer, Flow Temperature in 10^(3-3) deg C, value 0x1234
   };
   Kamstrup303WA02::DataLinkLayer::LongFrame long_frame = {
     .l = 19,
@@ -491,7 +491,7 @@ void test_datablockreader_read_data_blocks_from_long_frame_single_block_primary_
   TEST_ASSERT_EQUAL(0, actual_data_block->storage_number);
   TEST_ASSERT_EQUAL(0, actual_data_block->tariff);
   TEST_ASSERT_EQUAL(0, actual_data_block->ten_power);
-  TEST_ASSERT_EQUAL(Kamstrup303WA02::Unit::cubic_meter_per_hour, actual_data_block->unit);
+  TEST_ASSERT_EQUAL(Kamstrup303WA02::Unit::degrees_celsius, actual_data_block->unit);
   TEST_ASSERT_EQUAL(0, actual_data_block->index);
   TEST_ASSERT_FALSE(actual_data_block->is_manufacturer_specific);
   TEST_ASSERT_EQUAL(2, actual_data_block->data_length);
