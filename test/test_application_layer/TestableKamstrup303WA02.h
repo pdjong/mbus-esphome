@@ -1,11 +1,9 @@
+#ifndef TESTABLEKAMSTRUP303WA02_H_
+#define TESTABLEKAMSTRUP303WA02_H_
+
 #include <test_includes.h>
 #include <Kamstrup303WA02.h>
-#include <vector>
-#include <queue>
 #include "../test_data_link_layer/TestableDataLinkLayer.h"
-
-using std::vector;
-using std::queue;
 
 class TestableKamstrup303WA02 : public esphome::warmtemetermbus::Kamstrup303WA02 {
   public:
@@ -15,3 +13,5 @@ class TestableKamstrup303WA02 : public esphome::warmtemetermbus::Kamstrup303WA02
       return this->read_next_data_block(data_block);
     }
 };
+
+#endif // TESTABLEKAMSTRUP303WA02_H_
