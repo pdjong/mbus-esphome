@@ -130,6 +130,18 @@ namespace esphome
                 }
               }
             }
+
+            // Deallocate data_blocks
+            for (auto it = mbus_meter_data.data_blocks->begin(); it != mbus_meter_data.data_blocks->end(); ++it) {
+              Kamstrup303WA02::DataBlock *data_block = *it;
+              if (data_block->binary_data != nullptr) {
+                delete[] data_block->binary_data;
+                data_block->binary_data = nullptr;
+              }
+              delete data_block;
+            }
+            delete mbus_meter_data.data_blocks;
+            mbus_meter_data.data_blocks = nullptr;
           }
           else {
             ESP_LOGE(TAG, "Did not successfully read meter data");

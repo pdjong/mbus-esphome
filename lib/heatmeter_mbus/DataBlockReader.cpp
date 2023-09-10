@@ -47,6 +47,7 @@ void DataBlockReader::read_dif_into_block(Kamstrup303WA02::DataBlock* data_block
   switch (data_field) {
     case 0:
       data_block->data_length = 0;
+      data_block->binary_data = nullptr;
       break;
     case 1:
       data_block->data_length = 1;
