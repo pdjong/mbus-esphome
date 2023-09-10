@@ -90,8 +90,7 @@ namespace esphome
             ESP_LOGI(TAG, "Successfully read meter data");
 
             if (!heatMeterMbus->have_dumped_data_blocks_) {
-              for (auto it = mbus_meter_data.data_blocks->begin(); it != mbus_meter_data.data_blocks->end(); ++it) {
-                auto data_block = *it;
+              for (auto data_block : *mbus_meter_data.data_blocks) {
                 ESP_LOGI(TAG, "-- Index:\t\t\t%d --", data_block->index);
                 ESP_LOGI(TAG, "Function:\t\t\t%d", data_block->function);
                 ESP_LOGI(TAG, "Storage number:\t\t%d", data_block->storage_number);
