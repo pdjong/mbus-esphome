@@ -52,6 +52,8 @@ bool Kamstrup303WA02::read_meter_data(Kamstrup303WA02::MbusMeterData* meter_data
       ESP_LOGI(TAG, "Fixed data response");
       break;
   }
+  // Deallocate user_data, allocated by data link layer
+  delete[] response_to_req_ud2.user_data;
 
   return success;
 }
@@ -145,6 +147,8 @@ bool Kamstrup303WA02::DataLinkLayer::parse_long_frame_response(Kamstrup303WA02::
   long_frame->user_data = new uint8_t[user_data_len];
   for (uint8_t i { 0 }; i < user_data_len; ++i) {
     if (!this->read_next_byte(&current_byte)) {
+      delete[] long_frame->user_data;
+      long_frame->user_data = nullptr;
       this->flush_rx_buffer();
       return false;
     }
@@ -154,12 +158,16 @@ bool Kamstrup303WA02::DataLinkLayer::parse_long_frame_response(Kamstrup303WA02::
   // Calculate, read and check the check sum
   const uint8_t calculated_check_sum = this->calculate_checksum(long_frame);
   if (!this->read_next_byte(&long_frame->check_sum) || (long_frame->check_sum != calculated_check_sum)) {
+    delete[] long_frame->user_data;
+    long_frame->user_data = nullptr;
     this->flush_rx_buffer();
     return false;
   }
 
   // Check stop byte
   if (!this->read_next_byte(&current_byte) || (STOP_BYTE != current_byte)) {
+    delete[] long_frame->user_data;
+    long_frame->user_data = nullptr;
     this->flush_rx_buffer();
     return false;
   }
