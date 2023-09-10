@@ -1,6 +1,11 @@
+substitutions:
+  device_name: warmte-meter-mbus
+  friendly_name: MBus
+  time_timezone: "Europe/Amsterdam"
+
 esphome:
-  name: warmte-meter-mbus
-  friendly_name: warmte-meter-mbus
+  name: ${device_name}
+  friendly_name: ${friendly_name}
 
 esp32:
   board: esp32dev
@@ -10,7 +15,7 @@ esp32:
 external_components:
   - source:
       type: local
-      path: lib
+      path: custom_components
     
 # Enable logging
 logger:
@@ -30,11 +35,11 @@ ota:
 
 wifi:
 # Next two lines for building locally with ESPHome
-  ssid: "Unicorn"
-  password: "?" #password...
+#  ssid: "Unicorn"
+#  password: "?" #password...
 # Next two lines for building on Home Assistant OS, ESPHome
-#  ssid: !secret wifi_ssid
-#  password: !secret wifi_password
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
 
   # Enable fallback hotspot (captive portal) in case wifi connection fails
   ap:
@@ -57,7 +62,7 @@ switch:
   - platform: template
     name: MbusSwitch
     optimistic: true
-    restore_mode: RESTORE_DEFAULT_ON
+    restore_mode: RESTORE_DEFAULT_OFF
     id: readmbus
     turn_on_action:
     - lambda: |-
@@ -66,29 +71,101 @@ switch:
     - lambda: |-
         id(heatmetermbus).disableMbus();
 
+button:
+  - platform: restart
+    name: "${friendly_name} Restart"
+  - platform: factory_reset
+    name: "${friendly_name} Factory Reset"    
+
 interval:
   - interval: 8sec
     then:
       - lambda: |-
             id(heatmetermbus).readMbus();
+
 heatmeter_mbus:
   id: heatmetermbus
 
+# Time for uptime
+time:
+  - platform: homeassistant
+    id: time_homeassistant
+    timezone: "${time_timezone}"
+    on_time_sync:
+      - component.update: sensor_uptime_timestamp
+  - platform: sntp
+    id: time_sntp
+    timezone: "${time_timezone}"
+
+debug:
+  update_interval: 5s
+
 sensor:
   - platform: heatmeter_mbus
-    name: "T1"
+    name: "${friendly_name} T1"
     index: 6
     accuracy_decimals: 2
     unit_of_measurement: "°C"
     device_class: "temperature"
-    icon: "mdi:thermometer-minus"
+    icon: "mdi:thermometer"
   - platform: heatmeter_mbus
-    name: "T2"
+    name: "${friendly_name} T2"
     index: 7
     accuracy_decimals: 2
     unit_of_measurement: "°C"
     device_class: "temperature"
-    icon: "mdi:thermometer-minus"
+    icon: "mdi:thermometer"
+  - platform: heatmeter_mbus
+    name: "${friendly_name} Flow"
+    index: 11
+    accuracy_decimals: 0
+    unit_of_measurement: "l/h"
+    icon: "mdi:water"
+    filters:
+      - multiply: 0.001
+  #Wifi signal
+  - platform: wifi_signal
+    name: "${friendly_name} WiFi Signal"
+    update_interval: 300s
+    id: sensor_wifi_signal
+  #Debug sensors
+  - platform: debug
+    free:
+      name: "Heap Free"
+    block:
+      name: "Heap Max Block"
+    loop_time:
+      name: "Loop Time"
+  #Uptime
+  - platform: uptime
+    id: sensor_uptime      
+  - platform: template
+    id: sensor_uptime_timestamp
+    name: "${friendly_name} Uptime"
+    device_class: "timestamp"
+    accuracy_decimals: 0
+    update_interval: never
+    lambda: |-
+      static float timestamp = (
+        id(time_homeassistant).utcnow().timestamp - id(sensor_uptime).state
+      );
+      return timestamp;
+    entity_category: diagnostic
+text_sensor:
+  # IP address #
+  - platform: wifi_info
+    ip_address:
+      name: "${friendly_name} IP address"
+      icon: "mdi:network-outline"
+    ssid:
+      name: "${friendly_name} Connected SSID"
+    bssid:
+      name: "${friendly_name} Connected BSSID"
+  - platform: debug
+    device:
+      name: "Device Info"
+    reset_reason:
+      name: "Reset Reason"
 
 # sensor:
 #   - platform: heatmeter_mbus
