@@ -58,6 +58,8 @@ class Kamstrup303WA02 {
     } DataBlock;
 
     typedef struct MbusMeterData {
+      MbusMeterData() {}
+      ~MbusMeterData();
       std::vector<DataBlock*>* data_blocks { nullptr };
     } MbusMeterData;
 

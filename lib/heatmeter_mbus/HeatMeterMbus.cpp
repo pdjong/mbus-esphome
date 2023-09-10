@@ -120,8 +120,6 @@ namespace esphome
                 }
               }
             }
-            
-            heatMeterMbus->deallocate_data_blocks(&mbus_meter_data);
           }
           else {
             ESP_LOGE(TAG, "Did not successfully read meter data");
@@ -146,18 +144,6 @@ namespace esphome
         ESP_LOGI(TAG, "-------------------------------");
       }
       this->have_dumped_data_blocks_ = true;
-    }
-
-    void HeatMeterMbus::deallocate_data_blocks(Kamstrup303WA02::MbusMeterData* meter_data) {
-      for (auto data_block : *(meter_data->data_blocks)) {
-        if (data_block->binary_data != nullptr) {
-          delete[] data_block->binary_data;
-          data_block->binary_data = nullptr;
-        }
-        delete data_block;
-      }
-      delete meter_data->data_blocks;
-      meter_data->data_blocks = nullptr;
     }
 
     void HeatMeterMbus::enableMbus() {

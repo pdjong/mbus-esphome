@@ -41,7 +41,6 @@ class HeatMeterMbus : public Component, public uart::UARTDevice {
 
     static void read_mbus_task_loop(void* params);
     void dump_data_blocks(Kamstrup303WA02::MbusMeterData* meter_data);
-    static void deallocate_data_blocks(Kamstrup303WA02::MbusMeterData* meter_data);
     static esp_err_t initializeAndEnablePwm(Pwm* pwm);
 };
 
