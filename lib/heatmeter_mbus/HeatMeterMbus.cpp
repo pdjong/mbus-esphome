@@ -90,16 +90,7 @@ namespace esphome
             ESP_LOGI(TAG, "Successfully read meter data");
 
             if (!heatMeterMbus->have_dumped_data_blocks_) {
-              for (auto data_block : *mbus_meter_data.data_blocks) {
-                ESP_LOGI(TAG, "-- Index:\t\t\t%d --", data_block->index);
-                ESP_LOGI(TAG, "Function:\t\t\t%d", data_block->function);
-                ESP_LOGI(TAG, "Storage number:\t\t%d", data_block->storage_number);
-                ESP_LOGI(TAG, "Unit:\t\t\t%d", data_block->unit);
-                ESP_LOGI(TAG, "Ten power:\t\t\t%d", data_block->ten_power);
-                ESP_LOGI(TAG, "Data length:\t\t%d", data_block->data_length);
-                ESP_LOGI(TAG, "-------------------------------");
-              }
-              heatMeterMbus->have_dumped_data_blocks_ = true;
+              heatMeterMbus->dump_data_blocks(&mbus_meter_data);
             }
 
             for (auto it = heatMeterMbus->sensors_.begin(); it != heatMeterMbus->sensors_.end(); ++it) {
@@ -129,18 +120,8 @@ namespace esphome
                 }
               }
             }
-
-            // Deallocate data_blocks
-            for (auto it = mbus_meter_data.data_blocks->begin(); it != mbus_meter_data.data_blocks->end(); ++it) {
-              Kamstrup303WA02::DataBlock *data_block = *it;
-              if (data_block->binary_data != nullptr) {
-                delete[] data_block->binary_data;
-                data_block->binary_data = nullptr;
-              }
-              delete data_block;
-            }
-            delete mbus_meter_data.data_blocks;
-            mbus_meter_data.data_blocks = nullptr;
+            
+            heatMeterMbus->deallocate_data_blocks(&mbus_meter_data);
           }
           else {
             ESP_LOGE(TAG, "Did not successfully read meter data");
@@ -152,6 +133,31 @@ namespace esphome
           vTaskDelay(100 / portTICK_PERIOD_MS);
         }
       }
+    }
+
+    void HeatMeterMbus::dump_data_blocks(Kamstrup303WA02::MbusMeterData* meter_data) {
+      for (auto data_block : *(meter_data->data_blocks)) {
+        ESP_LOGI(TAG, "-- Index:\t\t\t%d --", data_block->index);
+        ESP_LOGI(TAG, "Function:\t\t\t%d", data_block->function);
+        ESP_LOGI(TAG, "Storage number:\t\t%d", data_block->storage_number);
+        ESP_LOGI(TAG, "Unit:\t\t\t%d", data_block->unit);
+        ESP_LOGI(TAG, "Ten power:\t\t\t%d", data_block->ten_power);
+        ESP_LOGI(TAG, "Data length:\t\t%d", data_block->data_length);
+        ESP_LOGI(TAG, "-------------------------------");
+      }
+      this->have_dumped_data_blocks_ = true;
+    }
+
+    void HeatMeterMbus::deallocate_data_blocks(Kamstrup303WA02::MbusMeterData* meter_data) {
+      for (auto data_block : *(meter_data->data_blocks)) {
+        if (data_block->binary_data != nullptr) {
+          delete[] data_block->binary_data;
+          data_block->binary_data = nullptr;
+        }
+        delete data_block;
+      }
+      delete meter_data->data_blocks;
+      meter_data->data_blocks = nullptr;
     }
 
     void HeatMeterMbus::enableMbus() {
