@@ -92,13 +92,13 @@ namespace esphome
             if (!heatMeterMbus->have_dumped_data_blocks_) {
               for (auto it = mbus_meter_data.data_blocks->begin(); it != mbus_meter_data.data_blocks->end(); ++it) {
                 auto data_block = *it;
-                ESP_LOGI(TAG, "-- Index:\t\t%d --", data_block->index);
-                ESP_LOGI(TAG, "Function:\t\t%d", data_block->function);
-                ESP_LOGI(TAG, "Storage number:\t%d", data_block->storage_number);
+                ESP_LOGI(TAG, "-- Index:\t\t\t%d --", data_block->index);
+                ESP_LOGI(TAG, "Function:\t\t\t%d", data_block->function);
+                ESP_LOGI(TAG, "Storage number:\t\t%d", data_block->storage_number);
                 ESP_LOGI(TAG, "Unit:\t\t\t%d", data_block->unit);
-                ESP_LOGI(TAG, "Ten power:\t\t%d", data_block->ten_power);
+                ESP_LOGI(TAG, "Ten power:\t\t\t%d", data_block->ten_power);
                 ESP_LOGI(TAG, "Data length:\t\t%d", data_block->data_length);
-                ESP_LOGI(TAG, "----------------------------");
+                ESP_LOGI(TAG, "-------------------------------");
               }
               heatMeterMbus->have_dumped_data_blocks_ = true;
             }
