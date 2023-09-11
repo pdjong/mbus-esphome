@@ -7,7 +7,7 @@
       <Entity type="Class">
         <Name>UARTDevice</Name>
         <Access>Public</Access>
-        <Location left="1116" top="235" />
+        <Location left="1279" top="240" />
         <Size width="162" height="128" />
         <Collapsed>False</Collapsed>
         <Member type="Method">public void write_array()</Member>
@@ -18,7 +18,7 @@
       <Entity type="Class">
         <Name>UARTComponent</Name>
         <Access>Public</Access>
-        <Location left="1436" top="235" />
+        <Location left="1599" top="240" />
         <Size width="162" height="128" />
         <Collapsed>False</Collapsed>
         <Member type="Method">public void write_array()</Member>
@@ -29,7 +29,7 @@
       <Entity type="Class">
         <Name>IDFUARTComponent</Name>
         <Access>Public</Access>
-        <Location left="1330" top="493" />
+        <Location left="1493" top="498" />
         <Size width="162" height="216" />
         <Collapsed>True</Collapsed>
         <Modifier>None</Modifier>
@@ -37,7 +37,7 @@
       <Entity type="Class">
         <Name>ESP32ArduinoUARTComponent</Name>
         <Access>Public</Access>
-        <Location left="1521" top="493" />
+        <Location left="1684" top="498" />
         <Size width="215" height="216" />
         <Collapsed>True</Collapsed>
         <Modifier>None</Modifier>
@@ -45,7 +45,7 @@
       <Entity type="Class">
         <Name>HeatMeterMbus</Name>
         <Access>Public</Access>
-        <Location left="982" top="534" />
+        <Location left="1145" top="539" />
         <Size width="162" height="94" />
         <Collapsed>False</Collapsed>
         <Member type="Method">public void readMbus()</Member>
@@ -54,7 +54,7 @@
       <Entity type="Class">
         <Name>Component</Name>
         <Access>Public</Access>
-        <Location left="872" top="235" />
+        <Location left="1035" top="240" />
         <Size width="162" height="111" />
         <Collapsed>False</Collapsed>
         <Member type="Method">public void setup()</Member>
@@ -64,7 +64,7 @@
       <Entity type="Class">
         <Name>Kamstrup303WA02</Name>
         <Access>Public</Access>
-        <Location left="915" top="714" />
+        <Location left="1078" top="719" />
         <Size width="289" height="128" />
         <Collapsed>False</Collapsed>
         <Member type="Method">public void sndNke()</Member>
@@ -75,7 +75,7 @@
       <Entity type="Class">
         <Name>MbusSensor</Name>
         <Access>Public</Access>
-        <Location left="628" top="534" />
+        <Location left="791" top="539" />
         <Size width="162" height="94" />
         <Collapsed>False</Collapsed>
         <Member type="Property">public int index { get; set; }</Member>
@@ -84,10 +84,10 @@
       <Entity type="Class">
         <Name>Sensor</Name>
         <Access>Public</Access>
-        <Location left="628" top="235" />
-        <Size width="162" height="94" />
+        <Location left="780" top="240" />
+        <Size width="185" height="94" />
         <Collapsed>False</Collapsed>
-        <Member type="Method">public void publish_state()</Member>
+        <Member type="Method">public void publish_state(float state)</Member>
         <Modifier>None</Modifier>
       </Entity>
       <Entity type="Comment">
@@ -96,16 +96,44 @@
 readMbus() uses Kamstrup303WA02 to read everything, and puts each value in an object.
 
 After reading everything, HeatMeterMbus goes over all its sensors and uses the sensor's index to map it on a read value. Then it tells the MbusSensor the value, and to publish it.</Text>
-        <Location left="457" top="714" />
+        <Location left="620" top="719" />
         <Size width="353" height="128" />
       </Entity>
       <Entity type="Class">
         <Name>DataBlockReader</Name>
         <Access>Public</Access>
-        <Location left="1373" top="714" />
+        <Location left="1536" top="719" />
         <Size width="302" height="94" />
         <Collapsed>False</Collapsed>
         <Member type="Method">public void read_data_blocks(LongFrame plong_frame)</Member>
+        <Modifier>None</Modifier>
+      </Entity>
+      <Entity type="Class">
+        <Name>IMbusSensor</Name>
+        <Access>Public</Access>
+        <Location left="435" top="240" />
+        <Size width="287" height="94" />
+        <Collapsed>False</Collapsed>
+        <Member type="Method">public abstract void transform_and_publish(DataBlock data_block)</Member>
+        <Modifier>Abstract</Modifier>
+      </Entity>
+      <Entity type="Class">
+        <Name>BinarySensor</Name>
+        <Access>Public</Access>
+        <Location left="189" top="240" />
+        <Size width="184" height="94" />
+        <Collapsed>False</Collapsed>
+        <Member type="Method">public void publish_state(bool state)</Member>
+        <Modifier>None</Modifier>
+      </Entity>
+      <Entity type="Class">
+        <Name>MbusBinarySensor</Name>
+        <Access>Public</Access>
+        <Location left="324" top="539" />
+        <Size width="162" height="111" />
+        <Collapsed>False</Collapsed>
+        <Member type="Property">public int index { get; set; }</Member>
+        <Member type="Property">public int bit { get; set; }</Member>
         <Modifier>None</Modifier>
       </Entity>
     </Entities>
@@ -115,12 +143,12 @@ After reading everything, HeatMeterMbus goes over all its sensors and uses the s
         <StartOrientation>Horizontal</StartOrientation>
         <EndOrientation>Horizontal</EndOrientation>
         <BendPoint relativeToStartShape="True">
-          <X>1342</X>
-          <Y>304</Y>
+          <X>1505</X>
+          <Y>309</Y>
         </BendPoint>
         <BendPoint relativeToStartShape="False">
-          <X>1393</X>
-          <Y>304</Y>
+          <X>1556</X>
+          <Y>309</Y>
         </BendPoint>
         <Direction>Unidirectional</Direction>
         <AssociationType>Association</AssociationType>
@@ -136,23 +164,31 @@ After reading everything, HeatMeterMbus goes over all its sensors and uses the s
       <Relationship type="Generalization" first="4" second="5">
         <StartOrientation>Vertical</StartOrientation>
         <EndOrientation>Vertical</EndOrientation>
+        <BendPoint relativeToStartShape="True">
+          <X>1207</X>
+          <Y>514</Y>
+        </BendPoint>
       </Relationship>
       <Relationship type="Association" first="4" second="0">
+        <Label>
+        </Label>
         <StartOrientation>Vertical</StartOrientation>
         <EndOrientation>Vertical</EndOrientation>
         <BendPoint relativeToStartShape="True">
-          <X>1064</X>
-          <Y>492</Y>
+          <X>1241</X>
+          <Y>497</Y>
         </BendPoint>
         <Direction>Unidirectional</Direction>
         <AssociationType>Association</AssociationType>
       </Relationship>
       <Relationship type="Association" first="4" second="6">
+        <Label>
+        </Label>
         <StartOrientation>Vertical</StartOrientation>
         <EndOrientation>Vertical</EndOrientation>
         <BendPoint relativeToStartShape="True">
-          <X>1014</X>
-          <Y>657</Y>
+          <X>1177</X>
+          <Y>662</Y>
         </BendPoint>
         <Direction>Unidirectional</Direction>
         <AssociationType>Composition</AssociationType>
@@ -162,8 +198,8 @@ After reading everything, HeatMeterMbus goes over all its sensors and uses the s
         <StartOrientation>Vertical</StartOrientation>
         <EndOrientation>Vertical</EndOrientation>
         <BendPoint relativeToStartShape="False">
-          <X>1104</X>
-          <Y>655</Y>
+          <X>1267</X>
+          <Y>660</Y>
         </BendPoint>
         <Direction>Unidirectional</Direction>
         <AssociationType>Association</AssociationType>
@@ -171,22 +207,70 @@ After reading everything, HeatMeterMbus goes over all its sensors and uses the s
       <Relationship type="Generalization" first="7" second="8">
         <StartOrientation>Vertical</StartOrientation>
         <EndOrientation>Vertical</EndOrientation>
+        <BendPoint relativeToStartShape="True">
+          <X>886</X>
+          <Y>501</Y>
+        </BendPoint>
       </Relationship>
       <Relationship type="Association" first="4" second="7">
-        <Label>
-        </Label>
         <StartOrientation>Horizontal</StartOrientation>
         <EndOrientation>Horizontal</EndOrientation>
         <Direction>Unidirectional</Direction>
         <AssociationType>Aggregation</AssociationType>
       </Relationship>
       <Relationship type="Association" first="6" second="10">
-        <Label>
-        </Label>
         <StartOrientation>Horizontal</StartOrientation>
         <EndOrientation>Horizontal</EndOrientation>
         <Direction>Unidirectional</Direction>
         <AssociationType>Association</AssociationType>
+      </Relationship>
+      <Relationship type="Association" first="7" second="11">
+        <Label>
+        </Label>
+        <StartOrientation>Vertical</StartOrientation>
+        <EndOrientation>Vertical</EndOrientation>
+        <BendPoint relativeToStartShape="True">
+          <X>852</X>
+          <Y>511</Y>
+        </BendPoint>
+        <Direction>Unidirectional</Direction>
+        <AssociationType>Association</AssociationType>
+      </Relationship>
+      <Relationship type="Generalization" first="13" second="12">
+        <StartOrientation>Vertical</StartOrientation>
+        <EndOrientation>Vertical</EndOrientation>
+        <BendPoint relativeToStartShape="True">
+          <X>383</X>
+          <Y>512</Y>
+        </BendPoint>
+      </Relationship>
+      <Relationship type="Association" first="13" second="11">
+        <Label>
+        </Label>
+        <StartOrientation>Vertical</StartOrientation>
+        <EndOrientation>Vertical</EndOrientation>
+        <BendPoint relativeToStartShape="True">
+          <X>422</X>
+          <Y>511</Y>
+        </BendPoint>
+        <Direction>Unidirectional</Direction>
+        <AssociationType>Association</AssociationType>
+      </Relationship>
+      <Relationship type="Association" first="4" second="13">
+        <Label>
+        </Label>
+        <StartOrientation>Horizontal</StartOrientation>
+        <EndOrientation>Horizontal</EndOrientation>
+        <BendPoint relativeToStartShape="True">
+          <X>1104</X>
+          <Y>623</Y>
+        </BendPoint>
+        <BendPoint relativeToStartShape="False">
+          <X>725</X>
+          <Y>662</Y>
+        </BendPoint>
+        <Direction>Unidirectional</Direction>
+        <AssociationType>Aggregation</AssociationType>
       </Relationship>
     </Relationships>
   </ProjectItem>
@@ -272,6 +356,8 @@ After reading everything, HeatMeterMbus goes over all its sensors and uses the s
     </Entities>
     <Relationships>
       <Relationship type="Association" first="0" second="1">
+        <Label>
+        </Label>
         <StartOrientation>Horizontal</StartOrientation>
         <EndOrientation>Horizontal</EndOrientation>
         <BendPoint relativeToStartShape="True">
@@ -283,6 +369,8 @@ After reading everything, HeatMeterMbus goes over all its sensors and uses the s
         <EndMultiplicity>1</EndMultiplicity>
       </Relationship>
       <Relationship type="Association" first="0" second="2">
+        <Label>
+        </Label>
         <StartOrientation>Horizontal</StartOrientation>
         <EndOrientation>Horizontal</EndOrientation>
         <BendPoint relativeToStartShape="True">
@@ -294,6 +382,8 @@ After reading everything, HeatMeterMbus goes over all its sensors and uses the s
         <EndMultiplicity>1</EndMultiplicity>
       </Relationship>
       <Relationship type="Association" first="1" second="3">
+        <Label>
+        </Label>
         <StartOrientation>Horizontal</StartOrientation>
         <EndOrientation>Horizontal</EndOrientation>
         <BendPoint relativeToStartShape="True">
@@ -308,6 +398,8 @@ After reading everything, HeatMeterMbus goes over all its sensors and uses the s
         <AssociationType>Composition</AssociationType>
       </Relationship>
       <Relationship type="Association" first="1" second="4">
+        <Label>
+        </Label>
         <StartOrientation>Horizontal</StartOrientation>
         <EndOrientation>Horizontal</EndOrientation>
         <BendPoint relativeToStartShape="True">
@@ -457,12 +549,16 @@ After reading everything, HeatMeterMbus goes over all its sensors and uses the s
         <EndOrientation>Vertical</EndOrientation>
       </Relationship>
       <Relationship type="Association" first="7" second="1">
+        <Label>
+        </Label>
         <StartOrientation>Horizontal</StartOrientation>
         <EndOrientation>Horizontal</EndOrientation>
         <Direction>Unidirectional</Direction>
         <AssociationType>Association</AssociationType>
       </Relationship>
       <Relationship type="Association" first="0" second="6">
+        <Label>
+        </Label>
         <StartOrientation>Horizontal</StartOrientation>
         <EndOrientation>Horizontal</EndOrientation>
         <Direction>Unidirectional</Direction>
@@ -622,8 +718,6 @@ MbusMeterData deallocates binary_data, DataBlocks and data_blocks </Text>
     </Entities>
     <Relationships>
       <Relationship type="Association" first="3" second="0">
-        <Label>
-        </Label>
         <StartOrientation>Vertical</StartOrientation>
         <EndOrientation>Horizontal</EndOrientation>
         <BendPoint relativeToStartShape="True">
@@ -638,8 +732,6 @@ MbusMeterData deallocates binary_data, DataBlocks and data_blocks </Text>
         <AssociationType>Association</AssociationType>
       </Relationship>
       <Relationship type="Association" first="5" second="2">
-        <Label>
-        </Label>
         <StartOrientation>Horizontal</StartOrientation>
         <EndOrientation>Horizontal</EndOrientation>
         <Direction>Unidirectional</Direction>
@@ -661,6 +753,8 @@ MbusMeterData deallocates binary_data, DataBlocks and data_blocks </Text>
         <AssociationType>Association</AssociationType>
       </Relationship>
       <Relationship type="Association" first="5" second="3">
+        <Label>
+        </Label>
         <StartOrientation>Vertical</StartOrientation>
         <EndOrientation>Vertical</EndOrientation>
         <BendPoint relativeToStartShape="True">
@@ -671,6 +765,8 @@ MbusMeterData deallocates binary_data, DataBlocks and data_blocks </Text>
         <AssociationType>Composition</AssociationType>
       </Relationship>
       <Relationship type="Association" first="5" second="6">
+        <Label>
+        </Label>
         <StartOrientation>Vertical</StartOrientation>
         <EndOrientation>Vertical</EndOrientation>
         <BendPoint relativeToStartShape="True">
@@ -685,6 +781,8 @@ MbusMeterData deallocates binary_data, DataBlocks and data_blocks </Text>
         <EndOrientation>Vertical</EndOrientation>
       </Relationship>
       <Relationship type="Association" first="3" second="7">
+        <Label>
+        </Label>
         <StartOrientation>Vertical</StartOrientation>
         <EndOrientation>Horizontal</EndOrientation>
         <BendPoint relativeToStartShape="True">
@@ -724,6 +822,8 @@ MbusMeterData deallocates binary_data, DataBlocks and data_blocks </Text>
         <AssociationType>Association</AssociationType>
       </Relationship>
       <Relationship type="Association" first="9" second="10">
+        <Label>
+        </Label>
         <StartOrientation>Horizontal</StartOrientation>
         <EndOrientation>Horizontal</EndOrientation>
         <BendPoint relativeToStartShape="True">
@@ -772,6 +872,8 @@ MbusMeterData deallocates binary_data, DataBlocks and data_blocks </Text>
         <AssociationType>Association</AssociationType>
       </Relationship>
       <Relationship type="Association" first="12" second="13">
+        <Label>
+        </Label>
         <StartOrientation>Vertical</StartOrientation>
         <EndOrientation>Vertical</EndOrientation>
         <BendPoint relativeToStartShape="False">
@@ -782,6 +884,8 @@ MbusMeterData deallocates binary_data, DataBlocks and data_blocks </Text>
         <AssociationType>Aggregation</AssociationType>
       </Relationship>
       <Relationship type="Association" first="13" second="14">
+        <Label>
+        </Label>
         <StartOrientation>Vertical</StartOrientation>
         <EndOrientation>Vertical</EndOrientation>
         <BendPoint relativeToStartShape="False">
@@ -831,8 +935,6 @@ MbusMeterData deallocates binary_data, DataBlocks and data_blocks </Text>
         </BendPoint>
       </Relationship>
       <Relationship type="Association" first="8" second="12">
-        <Label>
-        </Label>
         <StartOrientation>Horizontal</StartOrientation>
         <EndOrientation>Horizontal</EndOrientation>
         <BendPoint relativeToStartShape="True">
