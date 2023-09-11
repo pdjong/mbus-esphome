@@ -93,11 +93,9 @@ namespace esphome
               heatMeterMbus->dump_data_blocks(&mbus_meter_data);
             }
 
-            for (auto it = heatMeterMbus->sensors_.begin(); it != heatMeterMbus->sensors_.end(); ++it) {
-              IMbusSensor *sensor = *it;
-              for (auto data_block_it = mbus_meter_data.data_blocks->begin(); data_block_it != mbus_meter_data.data_blocks->end(); ++data_block_it) {
-                Kamstrup303WA02::DataBlock *data_block = *data_block_it;
-                if (data_block->index == sensor->index_) {
+            for (auto sensor : heatMeterMbus->sensors_) {
+              for (auto data_block : *(mbus_meter_data.data_blocks)) {
+                if (sensor->is_right_sensor_for_data_block(data_block)) {
                   ESP_LOGI(TAG, "Found matching data block");
                   sensor->transform_and_publish(data_block);
                   break;

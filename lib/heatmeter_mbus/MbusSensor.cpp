@@ -32,6 +32,10 @@ void MbusSensor::transform_and_publish(Kamstrup303WA02::DataBlock* data_block) {
   }
 }
 
+bool MbusSensor::is_right_sensor_for_data_block(Kamstrup303WA02::DataBlock* data_block) {
+  return (this->index_ == data_block->index);
+}
+
 } // namespace warmtemetermbus
 } // namespace esphome
 

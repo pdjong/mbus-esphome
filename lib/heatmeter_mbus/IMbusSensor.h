@@ -8,11 +8,8 @@ namespace warmtemetermbus {
 
 class IMbusSensor {
   public:
-    IMbusSensor(uint8_t index) : index_(index) {}
-    
     virtual void transform_and_publish(Kamstrup303WA02::DataBlock* data_block) = 0;
-
-    uint8_t index_;
+    virtual bool is_right_sensor_for_data_block(Kamstrup303WA02::DataBlock* data_block) = 0;
 };
 
 } //namespace warmtemetermbus
