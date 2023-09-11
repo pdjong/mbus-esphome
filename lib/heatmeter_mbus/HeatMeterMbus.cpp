@@ -3,7 +3,6 @@
 #include "esphome/core/log.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include <math.h>
 #include "HeatMeterMbus.h"
 #include "Kamstrup303WA02.h"
 #include "EspArduinoUartInterface.h"
@@ -99,23 +98,7 @@ namespace esphome
                 Kamstrup303WA02::DataBlock *data_block = *data_block_it;
                 if (data_block->index == sensor->index_) {
                   ESP_LOGI(TAG, "Found matching data block");
-                  Kamstrup303WA02::DataBlock *matching_data_block { data_block };
-                  switch (matching_data_block->data_length) {
-                    case 2: {
-                      int16_t *raw_value = reinterpret_cast<int16_t*>(matching_data_block->binary_data);
-                      float value = static_cast<float>(*raw_value * pow(10, matching_data_block->ten_power));
-                      sensor->publish_state(value);
-                      break;
-                    }
-                    case 4: {
-                      int32_t *raw_value = reinterpret_cast<int32_t*>(matching_data_block->binary_data);
-                      float value = static_cast<float>(*raw_value * pow(10, matching_data_block->ten_power));
-                      sensor->publish_state(value);
-                      break;
-                    }
-                    default:
-                      break;
-                  }
+                  sensor->transform_and_publish(data_block);
                   break;
                 }
               }
