@@ -4,6 +4,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include "HeatMeterMbus.h"
+#include "IMbusSensor.h"
 #include "Kamstrup303WA02.h"
 #include "EspArduinoUartInterface.h"
 
@@ -93,7 +94,7 @@ namespace esphome
             }
 
             for (auto it = heatMeterMbus->sensors_.begin(); it != heatMeterMbus->sensors_.end(); ++it) {
-              MbusSensor *sensor = *it;
+              IMbusSensor *sensor = *it;
               for (auto data_block_it = mbus_meter_data.data_blocks->begin(); data_block_it != mbus_meter_data.data_blocks->end(); ++data_block_it) {
                 Kamstrup303WA02::DataBlock *data_block = *data_block_it;
                 if (data_block->index == sensor->index_) {
