@@ -9,14 +9,11 @@
 namespace esphome {
 namespace warmtemetermbus {
 
-class MbusSensor : public sensor::Sensor, IMbusSensor {
+class MbusSensor : public sensor::Sensor, public IMbusSensor {
   public:
-    MbusSensor(uint8_t index) : index_(index) {}
+    MbusSensor(uint8_t index) : IMbusSensor(index) {}
 
     virtual void transform_and_publish(Kamstrup303WA02::DataBlock* data_block);
-    
-  //protected:
-    uint8_t index_;
 };
 
 } //namespace warmtemetermbus
