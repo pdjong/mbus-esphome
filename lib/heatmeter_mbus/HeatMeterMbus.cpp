@@ -6,7 +6,7 @@
 #include "HeatMeterMbus.h"
 #include "IMbusSensor.h"
 #include "Kamstrup303WA02.h"
-#include "EspArduinoUartInterface.h"
+#include "Esp32ArduinoUartInterface.h"
 
 using namespace std; 
 
@@ -20,7 +20,7 @@ namespace esphome
     bool pwmEnabled { false };
 
     HeatMeterMbus::HeatMeterMbus() {
-      EspArduinoUartInterface *uart_interface = new EspArduinoUartInterface(this);
+      Esp32ArduinoUartInterface *uart_interface = new Esp32ArduinoUartInterface(this);
       this->kamstrup = new Kamstrup303WA02(uart_interface);
     }
 

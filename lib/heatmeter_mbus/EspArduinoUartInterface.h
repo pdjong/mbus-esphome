@@ -1,5 +1,5 @@
-#ifndef ESPARDUINOUARTINTERFACE_H_
-#define ESPARDUINOUARTINTERFACE_H_
+#ifndef ESP32ARDUINOUARTINTERFACE_H_
+#define ESP32ARDUINOUARTINTERFACE_H_
 
 // #ifndef UNIT_TEST
 #include "esphome/core/datatypes.h"
@@ -11,9 +11,9 @@
 namespace esphome {
 namespace warmtemetermbus {
 
-class EspArduinoUartInterface : public UartInterface {
+class Esp32ArduinoUartInterface : public UartInterface {
   public:
-    EspArduinoUartInterface(uart::UARTDevice* uart_device) : uart_device_(uart_device) {}
+    Esp32ArduinoUartInterface(uart::UARTDevice* uart_device) : uart_device_(uart_device) {}
 
     virtual bool read_byte(uint8_t* data) {
       return this->uart_device_->read_byte(data);
@@ -42,4 +42,4 @@ class EspArduinoUartInterface : public UartInterface {
 } //namespace warmtemetermbus
 } //namespace esphome
 
-#endif // ESPARDUINOUARTINTERFACE_H_
+#endif // ESP32ARDUINOUARTINTERFACE_H_
