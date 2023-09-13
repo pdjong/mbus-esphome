@@ -277,6 +277,8 @@ bool Kamstrup303WA02::DataLinkLayer::wait_for_incoming_data() {
   bool dataReceived {false};
   // 330 bits + 50ms = 330 * 1000 / 2400 + 50 ms = 187,5 ms
   // Wait at least 11 bit times = 5ms
+  // For some reason waiting 5ms, then try until 190ms passed, does not work.
+  // Waiting for 138ms initially and then another 500ms at max, does work.
   delay(138);
   for (uint16_t i {0}; i < 500; ++i) {
     if (this->uart_interface_->available() > 0) {
