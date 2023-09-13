@@ -37,6 +37,10 @@ bool Kamstrup303WA02::read_meter_data(Kamstrup303WA02::MbusMeterData* meter_data
   DataLinkLayer::LongFrame response_to_req_ud2;
   if (!this->data_link_layer_->req_ud2(address, &response_to_req_ud2)) {
     ESP_LOGI(TAG, "req_ud2: fail");
+    if (response_to_req_ud2.user_data != nullptr) {
+      // Deallocate user_data, allocated by data link layer
+      delete[] response_to_req_ud2.user_data;
+    }
     return false;
   }
 
