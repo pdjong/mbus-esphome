@@ -87,7 +87,7 @@ bool Kamstrup303WA02::DataLinkLayer::req_ud2(const uint8_t address, LongFrame* r
     ESP_LOGI(TAG, "Could not initialize meter");
     return false;
   }
-  
+
   const uint8_t fcb = this->next_req_ud2_fcb_ ? 1u : 0u;
   const uint8_t c = (1 << C_FIELD_BIT_DIRECTION) | (fcb << C_FIELD_BIT_FCB) | (1 << C_FIELD_BIT_FCV) | C_FIELD_FUNCTION_REQ_UD2;
   bool received_response_to_request = this->try_send_short_frame(c, address);
@@ -200,7 +200,7 @@ bool Kamstrup303WA02::DataLinkLayer::parse_long_frame_response(Kamstrup303WA02::
 
 bool Kamstrup303WA02::DataLinkLayer::read_next_byte(uint8_t* received_byte) {
   const uint32_t time_before_starting_to_wait { millis() };
-	while (this->uart_interface_->available() == 0) {
+  while (this->uart_interface_->available() == 0) {
     delay(1);
     if (millis() - time_before_starting_to_wait > 150) {
       ESP_LOGE(TAG, "No data available after timeout");
