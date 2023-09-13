@@ -129,20 +129,20 @@ namespace esphome
       this->have_dumped_data_blocks_ = true;
     }
 
-    void HeatMeterMbus::enableMbus() {
+    void HeatMeterMbus::enable_mbus() {
       ESP_LOGI(TAG, "Enabling Mbus");
       pwm.enable();
       mbusEnabled = true;
     }
 
-    void HeatMeterMbus::disableMbus() {
+    void HeatMeterMbus::disable_mbus() {
       ESP_LOGI(TAG, "Disabling Mbus");
       pwm.disable();
       mbusEnabled = false;
       this->have_dumped_data_blocks_ = false;
     }
 
-    void HeatMeterMbus::readMbus()
+    void HeatMeterMbus::read_mbus()
     {
       updateRequested = true;
     }
