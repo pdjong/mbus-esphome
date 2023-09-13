@@ -273,7 +273,6 @@ void Kamstrup303WA02::DataLinkLayer::send_short_frame(const uint8_t c, const uin
   delay(1);
 }
 
-// TODO: rename to wait_for_incoming_telegram
 bool Kamstrup303WA02::DataLinkLayer::wait_for_incoming_data() {
   bool dataReceived {false};
   // 330 bits + 50ms = 330 * 1000 / 2400 + 50 ms = 187,5 ms
