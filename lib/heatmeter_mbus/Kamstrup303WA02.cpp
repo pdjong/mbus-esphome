@@ -80,14 +80,6 @@ bool Kamstrup303WA02::read_meter_data(Kamstrup303WA02::MbusMeterData* meter_data
   return success;
 }
 
-      // // Bits 0-4: day
-      // // Bits 8-11: month
-      // // Bits 5-7 & 12-15: year
-      // const uint16_t * const dateTimeBits {reinterpret_cast<uint16_t*>(dataRecord.data)};
-      // data->dateTimeLogged.day = *dateTimeBits & 0x001F;
-      // data->dateTimeLogged.month = (*dateTimeBits & 0x0F00) >> 8;
-      // data->dateTimeLogged.year = ((*dateTimeBits & 0xF000) >> 9) | ((*dateTimeBits & 0x00E0) >> 5);
-
 bool Kamstrup303WA02::DataLinkLayer::req_ud2(const uint8_t address, LongFrame* response_frame) {
   bool success { false };
 
