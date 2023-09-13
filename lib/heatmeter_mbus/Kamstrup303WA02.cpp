@@ -28,7 +28,6 @@ void Kamstrup303WA02::MbusMeterData::deallocate_data_blocks() {
   }
   delete this->data_blocks;
   this->data_blocks = nullptr;
-
 }
 
 Kamstrup303WA02::Kamstrup303WA02(UartInterface* uart_interface) {
