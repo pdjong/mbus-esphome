@@ -13,15 +13,17 @@ namespace warmtemetermbus {
 static const char * TAG {"Kamstrup303WA02"};
 
 Kamstrup303WA02::MbusMeterData::~MbusMeterData() {
-  for (auto data_block : *data_blocks) {
-    if (data_block->binary_data != nullptr) {
-      delete[] data_block->binary_data;
-      data_block->binary_data = nullptr;
+  if (this->data_blocks != nullptr) {
+    for (auto data_block : *data_blocks) {
+      if (data_block->binary_data != nullptr) {
+        delete[] data_block->binary_data;
+        data_block->binary_data = nullptr;
+      }
+      delete data_block;
     }
-    delete data_block;
+    delete data_blocks;
+    data_blocks = nullptr;
   }
-  delete data_blocks;
-  data_blocks = nullptr;
 }
 
 Kamstrup303WA02::Kamstrup303WA02(UartInterface* uart_interface) {
