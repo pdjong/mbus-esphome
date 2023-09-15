@@ -19,7 +19,7 @@ external_components:
       ref: tryout-external-component-in-github
     refresh: 0s
       # type: local
-      # path: lib\components
+      # path: components
     
 # Enable logging
 logger:
