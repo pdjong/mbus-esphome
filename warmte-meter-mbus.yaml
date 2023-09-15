@@ -17,7 +17,7 @@ external_components:
       type: git
       url: https://github.com/pdjong/mbus-esphome
       ref: tryout-external-component-in-github
-      refresh: 0s
+    refresh: 0s
       # type: local
       # path: lib\components
     
