@@ -47,6 +47,13 @@ namespace esphome
       { MbusReader::Unit::DIMENSIONLESS, "-" }
     };
 
+    map<MbusReader::Function, string> MbusController::function_names_ = {
+      { MbusReader::Function::INSTANTANEOUS, "instantaneous" },
+      { MbusReader::Function::MAXIMUM, "maximum" },
+      { MbusReader::Function::MINIMUM, "minimum" },
+      { MbusReader::Function::DURING_ERROR_STATE, "during error state" }
+    };
+
     bool pwm_initialized { false };
     bool pwm_enabled { false };
 
@@ -154,7 +161,7 @@ namespace esphome
     void MbusController::dump_data_blocks(MbusReader::MbusMeterData* meter_data) {
       for (auto data_block : *(meter_data->data_blocks)) {
         ESP_LOGI(TAG, "-- Index:\t\t\t%d --", data_block->index);
-        ESP_LOGI(TAG, "Function:\t\t\t%d", data_block->function);
+        ESP_LOGI(TAG, "Function:\t\t\t%s", MbusController::function_names_[data_block->function].c_str());
         ESP_LOGI(TAG, "Storage number:\t\t%d", data_block->storage_number);
         ESP_LOGI(TAG, "Unit:\t\t\t%s", MbusController::unit_names_[data_block->unit].c_str());
         ESP_LOGI(TAG, "Ten power:\t\t\t%d", data_block->ten_power);

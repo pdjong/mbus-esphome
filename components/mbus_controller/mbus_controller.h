@@ -43,6 +43,7 @@ class MbusController : public Component, public uart::UARTDevice {
   bool mbus_enabled_ { true };
   std::vector<IMbusSensor*> sensors_;
   static std::map<MbusReader::Unit, std::string> unit_names_;
+  static std::map<MbusReader::Function, std::string> function_names_;
 
  private:
   static void read_mbus_task_loop(void* params);
