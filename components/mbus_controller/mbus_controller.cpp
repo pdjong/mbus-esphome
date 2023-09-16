@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 
+#include "esphome/components/sensor/sensor.h"
 #include "esphome/core/log.h"
 #include "esp_err.h"
 #include <freertos/FreeRTOS.h>
@@ -197,7 +198,15 @@ namespace esphome
 
     void MbusController::dump_config()
     {
-      ESP_LOGCONFIG(TAG, "MbusController sensor");
+      ESP_LOGCONFIG(TAG, "MbusController config:");
+      if (this->is_failed()) {
+        ESP_LOGE(TAG, "MbusController not able to function properly");
+      } else {
+        for (auto sensor : this->sensors_) {
+          LOG_SENSOR("  ", "MbusSensor", sensor);
+          ESP_LOGCONFIG(TAG, "    index: %d", sensor.get_index());
+        }
+      }
     }
   } // namespace mbus_controller
 } // namespace esphome
