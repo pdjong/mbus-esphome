@@ -193,7 +193,7 @@ namespace esphome
     float MbusController::get_setup_priority() const
     {
       // After UART bus
-      return setup_priority::BUS - 1.0f;
+      return setup_priority::AFTER_CONNECTION;
     }
 
     void MbusController::dump_config()
@@ -204,7 +204,7 @@ namespace esphome
       } else {
         for (auto sensor : this->sensors_) {
           LOG_SENSOR("  ", "MbusSensor", sensor);
-          ESP_LOGCONFIG(TAG, "    index: %d", sensor.get_index());
+          ESP_LOGCONFIG(TAG, "    index: %d", sensor->get_index());
         }
       }
     }
