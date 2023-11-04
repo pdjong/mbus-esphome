@@ -57,23 +57,11 @@ uart:
   parity: EVEN
   stop_bits: 1
 
-# switch:
-#   - platform: template
-#     name: MbusSwitch
-#     optimistic: true
-#     restore_mode: RESTORE_DEFAULT_OFF
-#     id: readmbus
-#     turn_on_action:
-#     - lambda: |-
-#         id(mbuscontroller).enable_mbus();
-#     turn_off_action:
-#     - lambda: |-
-#         id(mbuscontroller).disable_mbus();
-
 switch:
   - platform: gpio
     pin: 32
     name: "MBus Power"
+    id: enable_boost_controller
     restore_mode: RESTORE_DEFAULT_ON
 
 button:
@@ -85,8 +73,26 @@ button:
 interval:
   - interval: 8sec
     then:
-      - lambda: |-
-            id(mbuscontroller).read_mbus();
+      - if:
+          condition: 
+            switch.is_on: enable_boost_controller
+          then:
+            - lambda: |-
+                  id(mbuscontroller).read_mbus();
+            - light.turn_on: readout_light
+            - delay: 250ms
+            - light.turn_off: readout_light
+
+light:
+  - platform: binary
+    id: readout_light
+    output: readout_light_output
+
+output:
+  - id: readout_light_output
+    platform: gpio
+    pin: GPIO25
+
 
 mbus_controller:
   id: mbuscontroller
@@ -134,14 +140,6 @@ sensor:
     name: "${friendly_name} WiFi Signal"
     update_interval: 300s
     id: sensor_wifi_signal
-  #Debug sensors
-  - platform: debug
-    free:
-      name: "Heap Free"
-    block:
-      name: "Heap Max Block"
-    loop_time:
-      name: "Loop Time"
   #Uptime
   - platform: uptime
     id: sensor_uptime      
@@ -165,10 +163,7 @@ text_sensor:
       icon: "mdi:network-outline"
     ssid:
       name: "${friendly_name} Connected SSID"
-    bssid:
-      name: "${friendly_name} Connected BSSID"
-  - platform: debug
-    device:
-      name: "Device Info"
-    reset_reason:
-      name: "Reset Reason"
+
+status_led:
+  pin:
+    number: GPIO26
