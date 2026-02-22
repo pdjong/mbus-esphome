@@ -15,15 +15,13 @@
 #include "i_mbus_sensor.h"
 #include "mbus_reader.h"
 
-using namespace std;
-
 namespace esphome
 {
   namespace mbus_controller
   {
     static const char *TAG = "MbusController";
 
-    map<MbusReader::Unit, string> MbusController::unit_names_ = {
+    std::map<MbusReader::Unit, std::string> MbusController::unit_names_ = {
       { MbusReader::Unit::WH, "Wh" },
       { MbusReader::Unit::J, "J" },
       { MbusReader::Unit::CUBIC_METER, "m3" },
@@ -47,7 +45,7 @@ namespace esphome
       { MbusReader::Unit::DIMENSIONLESS, "-" }
     };
 
-    map<MbusReader::Function, string> MbusController::function_names_ = {
+    std::map<MbusReader::Function, std::string> MbusController::function_names_ = {
       { MbusReader::Function::INSTANTANEOUS, "instantaneous" },
       { MbusReader::Function::MAXIMUM, "maximum" },
       { MbusReader::Function::MINIMUM, "minimum" },
